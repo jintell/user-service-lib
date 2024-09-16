@@ -92,6 +92,32 @@ public class AppResponseStub {
                 .build();
     }
 
+    public static Country country(int id) {
+        return Country
+                .builder()
+                .id(id)
+                .name(UUID.randomUUID().toString())
+                .language("[\"English\", \"Spanish\"]")
+                .currency(UUID.randomUUID().toString())
+                .createdOn(Instant.now())
+                .build();
+    }
+
+    public static Address address(int id) {
+        return Address
+                .builder()
+                .id(id)
+                .postCode(UUID.randomUUID().toString())
+                .street(UUID.randomUUID().toString())
+                .city(UUID.randomUUID().toString())
+                .state(UUID.randomUUID().toString())
+                .country(UUID.randomUUID().toString())
+                .language(UUID.randomUUID().toString())
+                .userId(id)
+                .createdOn(Instant.now())
+                .build();
+    }
+
     public static Boolean emailRequest(String otp) {
         return Objects.nonNull(GenericRequest.builder()
                 .to("test@test.com")
@@ -123,6 +149,10 @@ public class AppResponseStub {
 
     public static List<Role> roles() {
         return List.of(role(1), role(2), role(3));
+    }
+
+    public static List<Country> countries() {
+        return List.of(country(1), country(2), country(3));
     }
 
     public static <T> AppResponse appResponse(T item) {
