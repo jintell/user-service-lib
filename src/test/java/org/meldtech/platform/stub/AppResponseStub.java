@@ -65,7 +65,7 @@ public class AppResponseStub {
                 .builder()
                 .id(1)
                 .username("test@test.com")
-                .password("password")
+                .password(UUID.randomUUID().toString())
                 .enabled(true)
                 .publicId(UUID.randomUUID().toString())
                 .build();
@@ -126,14 +126,14 @@ public class AppResponseStub {
                         .otp(otp)
                         .link(UUID.randomUUID().toString())
                         .username("test@test.com")
-                        .password("secr5t")
+                        .password(UUID.randomUUID().toString())
                         .build())
                 .build() );
     }
 
 
     public static UserRecord userRecord() {
-        return new UserRecord(UUID.randomUUID().toString(), "test@test.com", "secr3t",
+        return new UserRecord(UUID.randomUUID().toString(), "test@test.com", UUID.randomUUID().toString(),
                 "test@test.com", "+234815667281", "USER");
     }
 
