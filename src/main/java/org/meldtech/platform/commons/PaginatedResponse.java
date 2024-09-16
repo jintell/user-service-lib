@@ -24,6 +24,14 @@ public class PaginatedResponse {
                 .map(this::buildResponse);
     }
 
+    public  <T, R> Mono<AppResponse> getPageIntId(List<R> resultSet,
+                                            ReactiveCrudRepository<T, Integer> repository,
+                                            Pageable pageable) {
+        return repository.count()
+                .map(result -> new PageImpl<>(resultSet, pageable, result))
+                .map(this::buildResponse);
+    }
+
     private  <R> AppResponse buildResponse(PageImpl<R> tPage) {
         int currentPage = tPage.getPageable().getPageNumber() + 1;
             return AppResponse.builder()

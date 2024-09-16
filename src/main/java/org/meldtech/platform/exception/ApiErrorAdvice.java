@@ -50,6 +50,7 @@ public class ApiErrorAdvice extends AbstractErrorWebExceptionHandler {
         ErrorAttributeOptions options = ErrorAttributeOptions.defaults().including(ErrorAttributeOptions.Include.MESSAGE);
         Map<String, Object> errorPropertiesMap = getErrorAttributes(request, options);
         log.error("{}", errorPropertiesMap.get("message"));
+        log.error("{}", errorPropertiesMap);
         return buildResponse(errorPropertiesMap);
     }
 

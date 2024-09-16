@@ -22,6 +22,7 @@ import reactor.test.StepVerifier;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.meldtech.platform.stub.AppResponseStub.create;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -41,7 +42,7 @@ public class OAuth2RegisteredClientServiceTest {
     @Test
     void givenClient_whenCreateClient_thenReturnClient() {
         when(clientRepository.save(any()))
-                .thenReturn(Mono.just(AppResponseStub.create()));
+                .thenReturn(Mono.just(create()));
 
         when(passwordEncoder.encode(any()))
                 .thenReturn(UUID.randomUUID().toString());
@@ -61,7 +62,7 @@ public class OAuth2RegisteredClientServiceTest {
                 .thenReturn(Flux.just(AppResponseStub.clients().toArray(new OAuth2RegisteredClient[0])));
 
         when(paginatedResponse.getData(any(), any(), any()))
-                .thenReturn(Mono.just(AppResponseStub.appResponse()));
+                .thenReturn(Mono.just(AppResponseStub.appResponse(create())));
 
         StepVerifier.create(clientService.getClients(ReportSettings.instance().page(1).size(10)))
                 .expectSubscription()
@@ -75,7 +76,7 @@ public class OAuth2RegisteredClientServiceTest {
     @Test
     void givenClientId_whenGetClient_thenReturnAppResponse() {
         when(clientRepository.findByClientId(anyString()))
-                .thenReturn(Mono.just(AppResponseStub.create()));
+                .thenReturn(Mono.just(create()));
 
         StepVerifier.create(clientService.getClients(UUID.randomUUID().toString()))
                 .expectSubscription()
@@ -89,10 +90,10 @@ public class OAuth2RegisteredClientServiceTest {
     @Test
     void givenClientIdAnUpdateClient_whenEditClient_thenReturnAppResponse() {
         when(clientRepository.findByClientId(anyString()))
-                .thenReturn(Mono.just(AppResponseStub.create()));
+                .thenReturn(Mono.just(create()));
 
         when(clientRepository.save(any()))
-                .thenReturn(Mono.just(AppResponseStub.create()));
+                .thenReturn(Mono.just(create()));
 
         StepVerifier.create(clientService.updateClients(UUID.randomUUID().toString(),ClientRequestStub.getClientRecord()))
                 .expectSubscription()
@@ -106,7 +107,7 @@ public class OAuth2RegisteredClientServiceTest {
     @Test
     void givenClientId_whenDeleteClient_thenReturnAppResponse() {
         when(clientRepository.findByClientId(anyString()))
-                .thenReturn(Mono.just(AppResponseStub.create()));
+                .thenReturn(Mono.just(create()));
 
         when(clientRepository.delete(any()))
                 .thenReturn(Mono.empty());
