@@ -3,6 +3,7 @@ package org.meldtech.platform.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.meldtech.platform.domain.Role;
 import org.meldtech.platform.domain.User;
 import org.meldtech.platform.domain.UserRole;
 import org.meldtech.platform.domain.Verification;
@@ -56,6 +57,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private static final String USER_MSG = "User Action Request Executed Successfully";
     private static final String USER_PASSWORD_MSG = "Password change was successful";
+    private static final String STANDARD_ROLE = "STANDARD";
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
@@ -80,17 +82,21 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                                                 .password(encodeSecret(accountToCreate.password()))
                                 .build()
                         )
-                ).doOnNext(account -> log.info("New User Account {} Created", account.getUsername()));
+                ).doOnNext(account -> log.info("New User Account {} Created", account.getUsername()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @Override
     protected Mono<User> assignDefaultPermissionToUser(User newAccount, UserRecord accountToCreate) throws AppException {
-        return roleRepository.findByName(accountToCreate.role())
+        return findRole(accountToCreate.role())
                 .flatMap(role -> userRoleRepository.save(UserRole.builder()
                                 .userId(newAccount.getId())
                                 .roleId(role.getId())
                                 .build()))
-                .map(r -> newAccount);
+                .map(r -> newAccount)
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     @Override
@@ -103,7 +109,9 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         .build() )
                 .flatMap(verification -> sendMail(verification, accountToCreate))
                 .map(r -> appResponse(new NewUserRecord("New User Account Created",
-                        newAccount.getPublicId()), USER_MSG));
+                        newAccount.getPublicId()), USER_MSG))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
     public Mono<AppResponse> verifyOtp(String otp) {
@@ -230,6 +238,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         .templateId(templateId)
                         .template(EmailTemplate.builder().link(email).otp(newOTP).build())
                         .build())
+                .doOnNext(aBoolean -> log.info("sendMail {}", aBoolean))
                 .map(r -> appResponse(OtpRecord.builder()
                         .message("OTP sent to, " +
                                 foundUser.getUsername())
@@ -257,6 +266,11 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                                 .onErrorResume(throwable ->
                                         handleOnErrorResume(new AppException("Wrong Otp/User"), BAD_REQUEST.value()))
                 )).switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
+    }
+
+    private Mono<Role> findRole(String name) {
+        return roleRepository.findByName(name)
+                .switchIfEmpty(roleRepository.findByName(STANDARD_ROLE));
     }
 
     private String encodeSecret(String secret) {

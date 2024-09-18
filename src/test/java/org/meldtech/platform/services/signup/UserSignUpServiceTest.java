@@ -126,7 +126,7 @@ class UserSignUpServiceTest {
                 .verify();
     }
 
-    @DisplayName("Change User Password - Valid Current Password")
+    @DisplayName("Change User Password - InValid Current Password")
     @Test
     void givenInvalidCurrentPassword_whenChangePassword_thenReturnException() {
         when(userRepository.findByPublicId(anyString())).thenReturn(Mono.just(user()));

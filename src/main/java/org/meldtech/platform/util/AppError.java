@@ -8,7 +8,7 @@ package org.meldtech.platform.util;
 public abstract class AppError {
     private AppError() {}
     private static final String DUPLICATE = "Unique";
-    private static final String DUPLICATE_MSG = "Record already exists";
+    private static final String DUPLICATE_MSG = "Record already exists. Please check your entries and resend again!";
     private static final String NOT_FOUND = "404 NOT_FOUND";
     private static final String BAD_REQUEST = "400 BAD_REQUEST";
     private static final String UNAUTHORIZED = "401 UNAUTHORIZED";

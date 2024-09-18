@@ -40,6 +40,24 @@ meld:
     otp:
       cleanup: '0 0 * * * ?'
 
+oauth2:
+  client:
+    id: ${CLIENT_ID}
+    secret: ${CLIENT_SECRET}
+
+  authorize:
+    url: ${HOST_ISSUER}/oauth2/authorize
+    scope: ${SCOPE}
+    challengeMethod: S256
+
+  authorization:
+    url: ${HOST_ISSUER}/oauth2/token
+    grant_type: authorization_code
+    redirect_uri: ${REDIRECT_URL}
+
+  logout:
+    url: ${ISSUER_HOST}/logout
+
 logging:
   level:
     root: ${ROOT_LOG_LEVEL}

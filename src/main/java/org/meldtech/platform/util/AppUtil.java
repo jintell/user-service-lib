@@ -10,9 +10,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @Author: Josiah Adetayo
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com
@@ -90,6 +93,7 @@ public class AppUtil {
         }
         return generatedString.toString();
     }
+
     public static ObjectMapper getMapper() {
         return new ObjectMapper()
                 .registerModule(new JavaTimeModule())
@@ -101,6 +105,8 @@ public class AppUtil {
     public static String getUUID() {
         return UUID.randomUUID().toString();
     }
+
+    public static final Map<String, String> USER_DEVICE = new ConcurrentHashMap<>();
 
     public static Pageable setPage(ReportSettings settings) {
         return PageRequest.of(settings.getPage() - 1, settings.getSize(),

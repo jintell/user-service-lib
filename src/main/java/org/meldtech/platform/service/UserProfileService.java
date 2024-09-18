@@ -51,6 +51,7 @@ public class UserProfileService {
                                 .middleName(userProfile.profile().middleName())
                                 .lastName(userProfile.profile().lastName())
                                 .phoneNumber(userProfile.profile().phoneNumber())
+                                .language(userProfile.profile().language())
                                 .email(userProfile.profile().email())
                                 .settings("{}" )
                                 .userid(user.getId())
