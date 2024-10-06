@@ -22,7 +22,8 @@ public class ApiRequest {
                 .page(Integer.parseInt(request.queryParam("page").orElse("0")))
                 .size(Integer.parseInt(request.queryParam("size").orElse("10")))
                 .sortIn(request.queryParam("sortIn").orElse("asc"))
-                .sortBy(request.queryParam("sortBy").orElse("createdOn"));
+                .sortBy(request.queryParam("sortBy").orElse("createdOn"))
+                .search(request.queryParam("search").orElse(""));
     }
 
     public static Pageable setPage(ReportSettings settings) {

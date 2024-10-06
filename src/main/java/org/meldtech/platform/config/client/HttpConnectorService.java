@@ -117,7 +117,7 @@ public class HttpConnectorService {
     private Mono<Throwable> handleClientError(ClientResponse response) {
         return response.bodyToMono(String.class)
                 .flatMap( s -> {
-                    log.error("{}", s);
+                    log.error("Error from client {}", s);
                     ClientError clientError = null;
                     try {
                         clientError = getMapper().readValue(s, ClientError.class);

@@ -3,6 +3,7 @@ package org.meldtech.platform.service.token;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.meldtech.platform.config.client.HttpConnectorService;
+import org.meldtech.platform.model.api.AppResponse;
 import org.meldtech.platform.model.api.request.signin.AccessToken;
 import org.meldtech.platform.service.encoding.MessageEncoding;
 import org.meldtech.platform.util.AppUtil;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -32,29 +34,34 @@ public class TokenService {
     @Value("${oauth2.authorization.redirect_uri}")
     private String redirectUrl;
 
-    public Mono<AccessToken> exchangeWithAccessToken(String code, String deviceId) {
-        String codeVerifier = AppUtil.USER_DEVICE.get(deviceId);
-        var url = buildUrl(code, codeVerifier);
-        log.trace("Fetching auth token with: {}", url);
-        return httpConnectorService.postForm(url, new LinkedMultiValueMap<>(), headers(), AccessToken.class);
+    public Mono<AppResponse> exchangeWithAccessToken(String code, String deviceId) {
+        return askForExchange(code, deviceId)
+                .map(accessToken -> AppUtil.appResponse(accessToken, "User Access token"));
     }
 
-    private String buildUrl(String code, String codeVerifier) {
-        return String.format("%s?client_id=%s&grant_type=%s&redirect_uri=%s&code=%s&code_verifier=%s",
-                authorizationUrl,
-                clientId,
-                grantType,
-                redirectUrl,
-                code,
-                codeVerifier);
+    private Mono<AccessToken> askForExchange(String code, String deviceId) {
+        String codeVerifier = AppUtil.USER_DEVICE.get(deviceId);
+        var url = authorizationUrl;
+        log.trace("Fetching auth token with: {}", url);
+        return httpConnectorService.postForm(url, params(code, codeVerifier), headers(), AccessToken.class);
     }
 
     private Map<String, String> headers() {
         Map<String, String> headers = new HashMap<>();
-        headers.put("Content_Type", MediaType.APPLICATION_JSON_VALUE);
+        headers.put("Content_Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         headers.put("Accept", MediaType.APPLICATION_JSON_VALUE);
         headers.put("Authorization", "Basic " +
                 MessageEncoding.base64Encoding(String.format("%s:%s", clientId, clientSecret)) );
         return headers;
+    }
+
+    private MultiValueMap<String, String> params(String code, String codeVerifier) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", grantType);
+        params.add("redirect_uri", redirectUrl);
+        params.add("client_id", clientId);
+        params.add("code", code);
+        params.add("code_verifier", codeVerifier);
+        return params;
     }
 }

@@ -11,6 +11,7 @@ import org.meldtech.platform.exception.AppException;
 import org.meldtech.platform.model.api.AppResponse;
 import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.api.response.FullUserProfileRecord;
+import org.meldtech.platform.model.api.response.UserMetrics;
 import org.meldtech.platform.repository.UserProfileRepository;
 import org.meldtech.platform.repository.UserRepository;
 import org.meldtech.platform.util.AppError;
@@ -19,12 +20,13 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.setPage;
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.*;
+
 /**
  * @Author: Josiah Adetayo
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com
@@ -41,6 +43,7 @@ public class UserProfileService {
     private static final String INVALID_USER = "Unauthorized User Action";
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
+    private final UserProfileRepository userProfileRepository;
 
     public Mono<AppResponse> createUserProfile(FullUserProfileRecord userProfile) {
         log.info("About to create user profile {}", userProfile);
@@ -98,7 +101,24 @@ public class UserProfileService {
                 .flatMap(this::getUserProfileRecord)
                 .collectList()
                 .flatMap(profileRecords -> paginatedResponse.getPageIntId(profileRecords, profileRepository, setPage(settings)))
-                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()));
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), NOT_FOUND.value()));
+    }
+
+    public Mono<AppResponse> getUserMetrics() {
+        return getTotalUserCount()
+                .zipWith(getActiveUsersCount())
+                .map(tuple -> new UserMetrics(tuple.getT1(), tuple.getT2(), tuple.getT1() - tuple.getT2()))
+                .map(metrics -> appResponse(metrics, USER_PROFILE_MSG))
+                .onErrorResume(t -> handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
+    }
+
+    public Mono<AppResponse> searchByValue(ReportSettings settings) {
+        String value = enhance(settings);
+        return userProfileRepository.getSearchResult(value, value, value, value, value)
+                .flatMap(this::getUserProfileRecord)
+                .collectList()
+                .flatMap(profileRecords -> paginatedResponse.getPageIntId(profileRecords, profileRepository, setPage(settings)))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), NOT_FOUND.value()));
     }
 
     private Mono<FullUserProfileRecord> getUserProfileRecord(UserProfile profile) {
@@ -121,6 +141,15 @@ public class UserProfileService {
                 );
     }
 
+    private Mono<Long> getTotalUserCount() {
+        return userRepository.count();
+    }
+
+    private Mono<Long> getActiveUsersCount() {
+        return userRepository.findByEnabled(true)
+                .count();
+    }
+
     private Mono<UserProfile> getUserProfileFromDB(Integer id) {
         return profileRepository.findById(getOrDefault(id));
     }
@@ -141,6 +170,10 @@ public class UserProfileService {
                 .switchIfEmpty( Mono.just(false) );
     }
 
+    private String enhance(ReportSettings settings) {
+        if(Objects.isNull(settings.getSearch())) return "";
+        return "%".concat(settings.getSearch().toLowerCase()).concat("%");
+    }
 
     private Integer getOrDefault(Integer id) {
         return Objects.isNull(id) ? -1 : id;
