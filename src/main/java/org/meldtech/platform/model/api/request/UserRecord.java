@@ -14,6 +14,8 @@ import jakarta.validation.constraints.NotBlank;
 public record UserRecord(String publicId,
                          @NotBlank(message = "Username is Required") String username,
                          @NotBlank(message = "Password is Required") String password,
+                         String firstName,
+                         String lastName,
                          @NotBlank(message = "Email is Required")
                          @Email(message = "Email should be valid")
                          String email,

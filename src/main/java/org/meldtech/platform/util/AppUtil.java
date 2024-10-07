@@ -2,6 +2,7 @@ package org.meldtech.platform.util;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -100,6 +101,16 @@ public class AppUtil {
                 .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .disable(DeserializationFeature.FAIL_ON_INVALID_SUBTYPE);
+    }
+
+    public static <T> T convertToType(Object value, Class<T> type) {
+        try {
+            return type.getCanonicalName().equals("java.lang.String") ?
+                    type.cast(getMapper().writer().writeValueAsString(value)) :
+                    getMapper().readValue(value.toString(), type);
+        }catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static String getUUID() {

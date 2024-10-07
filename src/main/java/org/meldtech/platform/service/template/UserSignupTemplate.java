@@ -11,15 +11,15 @@ import reactor.core.publisher.Mono;
 public abstract class UserSignupTemplate<S,T, R> {
     public final Mono<R> createUser(S supplier) {
         return createUserAccount(supplier)
-                .flatMap(newAccount ->
-                                assignDefaultPermissionToUser(newAccount, supplier)
-                                                .flatMap(newUserAccount ->
-                                                        sendActivationMail(newUserAccount, supplier))
+                .flatMap(newAccount -> assignDefaultPermissionToUser(newAccount, supplier)
+                                        .flatMap(newUserProfile -> createUserProfile(newUserProfile, supplier) )
+                                        .flatMap(newUserAccount -> sendActivationMail(newUserAccount, supplier))
                 );
     }
 
     protected abstract Mono<T> createUserAccount(S accountToCreate) throws AppException;
     protected abstract Mono<T> assignDefaultPermissionToUser(T newAccount, S accountToCreate) throws AppException;
+    protected abstract Mono<T> createUserProfile(T newAccount, S accountToCreate) throws AppException;
     protected abstract Mono<R> sendActivationMail(T newAccount, S accountToCreate) throws AppException;
 
 }

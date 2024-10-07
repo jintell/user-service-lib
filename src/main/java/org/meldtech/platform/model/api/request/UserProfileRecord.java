@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
+import org.meldtech.platform.model.dto.UserSetting;
 
 import java.time.Instant;
 
@@ -27,6 +28,6 @@ public record UserProfileRecord (@NotBlank(message = "First name must be provide
                                  String website,
                                  String language,
                                  String profilePicture,
-                                 String settings,
+                                 UserSetting settings,
                                  Integer userid,
                                  Instant createdOn){}

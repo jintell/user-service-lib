@@ -15,6 +15,8 @@ import java.io.Serializable;
 public class EmailTemplate implements Serializable {
     private String link;
     private String otp;
+    private String company;
+    private String firstName;
     private String username;
     private String password;
 }

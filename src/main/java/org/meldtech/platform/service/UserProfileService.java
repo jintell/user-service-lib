@@ -56,7 +56,7 @@ public class UserProfileService {
                                 .phoneNumber(userProfile.profile().phoneNumber())
                                 .language(userProfile.profile().language())
                                 .email(userProfile.profile().email())
-                                .settings("{}" )
+                                .settings(userProfile.profile().settings())
                                 .userid(user.getId())
                                 .build()))
                 ).map(UserProfileConverter::mapToRecord)
@@ -66,10 +66,29 @@ public class UserProfileService {
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
+    public Mono<UserProfileRecord> createUserProfile(UserProfileRecord userProfile, int userId) {
+        log.info("Creating user profile at sign up {}", userProfile);
+        return  profileRepository.save(UserProfileConverter
+                        .mapToEntity(UserProfileRecord.builder()
+                                .firstName(userProfile.firstName())
+                                .middleName(userProfile.middleName())
+                                .lastName(userProfile.lastName())
+                                .phoneNumber(userProfile.phoneNumber())
+                                .language(userProfile.language())
+                                .email(userProfile.email())
+                                .settings(userProfile.settings())
+                                .userid(userId)
+                                .build())
+                ).map(UserProfileConverter::mapToRecord)
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+    }
+
     public Mono<AppResponse> updateUserProfile(FullUserProfileRecord userProfileRecord) {
         log.info("About to update user profile {}", userProfileRecord);
         return userRepository.findByPublicId(userProfileRecord.publicId())
                 .flatMap(user -> profileRepository.findById(getOrDefault(user.getId())))
+                .doOnNext(profile -> log.info("Found Profile {}, {}", profile.getFirstName(), profile.getLastName()))
                 .flatMap(userProfile -> profileRepository.save(UserProfileConverter
                                 .mapToEntity(userProfile, userProfileRecord.profile()) )
                 ).map(UserProfileConverter::mapToRecord)

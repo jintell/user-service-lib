@@ -11,10 +11,12 @@ import org.meldtech.platform.event.EmailEvent;
 import org.meldtech.platform.exception.AppException;
 import org.meldtech.platform.model.api.AppResponse;
 import org.meldtech.platform.model.api.request.PasswordRestRecord;
+import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.api.request.UserRecord;
 import org.meldtech.platform.model.api.response.NewUserRecord;
 import org.meldtech.platform.model.api.response.OtpRecord;
 import org.meldtech.platform.model.constant.VerificationType;
+import org.meldtech.platform.model.dto.UserSetting;
 import org.meldtech.platform.model.event.EmailTemplate;
 import org.meldtech.platform.model.event.GenericRequest;
 import org.meldtech.platform.repository.*;
@@ -35,6 +37,7 @@ import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResum
 import static org.meldtech.platform.model.constant.VerificationType.OTHERS;
 import static org.meldtech.platform.model.constant.VerificationType.PASSWORD_RESET;
 import static org.meldtech.platform.util.AppUtil.appResponse;
+import static org.meldtech.platform.util.AppUtil.getValueOrDefault;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -52,6 +55,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     private final UserRoleRepository userRoleRepository;
     private final RoleRepository roleRepository;
     private final VerificationRepository verificationRepository;
+    private final UserProfileService userProfileService;
     private final PasswordEncoder passwordEncoder;
     private final EmailEvent emailEvent;
 
@@ -61,6 +65,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
+    private final String company = "EGMS";
     private static final String INVALID_USER = "Invalid username";
     private static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
@@ -97,6 +102,18 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .map(r -> newAccount)
                 .onErrorResume(t ->
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+    }
+
+    @Override
+    protected Mono<User> createUserProfile(User newAccount, UserRecord accountToCreate) throws AppException {
+        return userProfileService.createUserProfile(UserProfileRecord.builder()
+                        .email(accountToCreate.email())
+                        .phoneNumber(accountToCreate.phone())
+                        .firstName(accountToCreate.firstName())
+                        .lastName(accountToCreate.lastName())
+                        .settings(new UserSetting(accountToCreate.role(), false))
+                .build(), getOrDefault(newAccount.getId()))
+                .map(account -> newAccount);
     }
 
     @Override
@@ -228,6 +245,10 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .template(EmailTemplate.builder().link(
                                 accountToCreate.email())
                         .otp(verification.getUserOtp())
+                        .firstName(accountToCreate.firstName())
+                        .company(company)
+                        .username(accountToCreate.username())
+                        .password(accountToCreate.password())
                         .build())
                 .build());
     }
@@ -275,6 +296,10 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private String encodeSecret(String secret) {
         return Objects.isNull(secret) ? null : passwordEncoder.encode(secret);
+    }
+
+    private Integer getOrDefault(Integer id) {
+        return Objects.isNull(id) ? -1 : id;
     }
 
 }
