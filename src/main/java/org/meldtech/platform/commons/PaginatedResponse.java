@@ -62,12 +62,12 @@ public class PaginatedResponse {
 
     private static int navigation(int currentPage, int totalPages, NavigationType type) {
         if(type == PREVIOUS) {
-            if(currentPage >= totalPages) { return  0; }
+            if(currentPage >= (totalPages + 1)) { return  0; }
             if(currentPage > 1) { return currentPage - 1; }
             else { return 0; }
         }else if(type == NEXT) {
             if(currentPage >= totalPages) { return  0; }
-            else { return currentPage + 1; }
+            return currentPage + 1;
         }
         return 0;
     }
