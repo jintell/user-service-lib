@@ -38,17 +38,17 @@ public class UserProfileConverter {
                 .build();
     }
 
-    public static synchronized UserProfile mapToEntity(UserProfile userProfile, UserProfileRecord profileRecord) {
-        if(Objects.nonNull(profileRecord.companyName())) userProfile.setCompanyName(profileRecord.companyName());
-        if(Objects.nonNull(profileRecord.firstName())) userProfile.setFirstName(profileRecord.firstName());
-        if(Objects.nonNull(profileRecord.middleName())) userProfile.setMiddleName(profileRecord.middleName());
-        if(Objects.nonNull(profileRecord.lastName())) userProfile.setLastName(profileRecord.lastName());
-        if(Objects.nonNull(profileRecord.profilePicture())) userProfile.setProfilePicture(profileRecord.profilePicture());
-        if(Objects.nonNull(profileRecord.language())) userProfile.setLanguage(profileRecord.language());
-        if(Objects.nonNull(profileRecord.website())) userProfile.setWebsite(profileRecord.website());
-        if(Objects.nonNull(profileRecord.email())) userProfile.setEmail(profileRecord.email());
-        if(Objects.nonNull(profileRecord.phoneNumber())) userProfile.setPhoneNumber(profileRecord.phoneNumber());
-        userProfile.setSettings(Objects.isNull(profileRecord.settings()) ? null :
+    public static synchronized UserProfile mapToEntity(UserProfile userProfile, UserProfileRecord profileRecord, boolean isAdmin) {
+        if(Objects.nonNull(profileRecord.companyName()) && isAdmin) userProfile.setCompanyName(profileRecord.companyName());
+        if(Objects.nonNull(profileRecord.firstName()) && isAdmin) userProfile.setFirstName(profileRecord.firstName());
+        if(Objects.nonNull(profileRecord.middleName()) && isAdmin) userProfile.setMiddleName(profileRecord.middleName());
+        if(Objects.nonNull(profileRecord.lastName()) && isAdmin) userProfile.setLastName(profileRecord.lastName());
+        if(Objects.nonNull(profileRecord.profilePicture()) && isAdmin) userProfile.setProfilePicture(profileRecord.profilePicture());
+        if(Objects.nonNull(profileRecord.language()) && isAdmin) userProfile.setLanguage(profileRecord.language());
+        if(Objects.nonNull(profileRecord.website()) && isAdmin) userProfile.setWebsite(profileRecord.website());
+        if(Objects.nonNull(profileRecord.email()) && isAdmin) userProfile.setEmail(profileRecord.email());
+        if(Objects.nonNull(profileRecord.phoneNumber()) && isAdmin) userProfile.setPhoneNumber(profileRecord.phoneNumber());
+        if(isAdmin) userProfile.setSettings(Objects.isNull(profileRecord.settings()) ? null :
                 Json.of(convertToType(profileRecord.settings(), String.class)));
         return userProfile;
     }
@@ -68,6 +68,12 @@ public class UserProfileConverter {
                 .settings(Objects.isNull(profile.getSettings())? null :
                         convertToType(profile.getSettings().asString(), UserSetting.class))
                 .build();
+    }
+
+    public static synchronized UserProfile updateEntityRole(UserProfile profile, String newRole) {
+        UserSetting userSetting = convertToType(profile.getSettings().asString(), UserSetting.class);
+        profile.setSettings(Json.of(convertToType(new UserSetting(newRole, userSetting.isEmailVerified()), String.class)));
+        return profile;
     }
 
     public static synchronized List<UserProfileRecord> mapToRecordList(List<UserProfile> profiles) {

@@ -12,16 +12,18 @@ import org.meldtech.platform.model.api.AppResponse;
 import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.api.response.FullUserProfileRecord;
 import org.meldtech.platform.model.api.response.UserMetrics;
+import org.meldtech.platform.repository.RoleRepository;
 import org.meldtech.platform.repository.UserProfileRepository;
 import org.meldtech.platform.repository.UserRepository;
+import org.meldtech.platform.repository.UserRoleRepository;
 import org.meldtech.platform.util.AppError;
 import org.meldtech.platform.util.ReportSettings;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
-import java.util.StringJoiner;
 
+import static org.meldtech.platform.converter.UserProfileConverter.updateEntityRole;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.setPage;
@@ -39,11 +41,15 @@ public class UserProfileService {
     private final UserRepository userRepository;
     private final UserProfileRepository profileRepository;
     private final PaginatedResponse paginatedResponse;
+    private final UserProfileRepository userProfileRepository;
+    private final RoleRepository roleRepository;
+    private final UserRoleRepository userRoleRepository;
 
     private static final String INVALID_USER = "Unauthorized User Action";
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
-    private final UserProfileRepository userProfileRepository;
+    private static final String INVALID_ROLE = "Invalid/No role was provided";
+
 
     public Mono<AppResponse> createUserProfile(FullUserProfileRecord userProfile) {
         log.info("About to create user profile {}", userProfile);
@@ -84,13 +90,13 @@ public class UserProfileService {
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
-    public Mono<AppResponse> updateUserProfile(FullUserProfileRecord userProfileRecord) {
+    public Mono<AppResponse> updateUserProfile(FullUserProfileRecord userProfileRecord, boolean isAdmin) {
         log.info("About to update user profile {}", userProfileRecord);
         return userRepository.findByPublicId(userProfileRecord.publicId())
                 .flatMap(user -> profileRepository.findById(getOrDefault(user.getId())))
                 .doOnNext(profile -> log.info("Found Profile {}, {}", profile.getFirstName(), profile.getLastName()))
                 .flatMap(userProfile -> profileRepository.save(UserProfileConverter
-                                .mapToEntity(userProfile, userProfileRecord.profile()) )
+                                .mapToEntity(userProfile, userProfileRecord.profile(), isAdmin) )
                 ).map(UserProfileConverter::mapToRecord)
                 .map(profileRecord -> appResponse(profileRecord, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
@@ -138,6 +144,20 @@ public class UserProfileService {
                 .collectList()
                 .flatMap(profileRecords -> paginatedResponse.getPageIntId(profileRecords, profileRepository, setPage(settings)))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), NOT_FOUND.value()));
+    }
+
+    public Mono<AppResponse> changePermission(String publicId, String roleName) {
+        return roleRepository.findByName(roleName)
+                .flatMap(role -> userRepository.findByPublicId(publicId)
+                        .flatMap(user -> userRoleRepository.findByUserId(getOrDefault(user.getId())))
+                        .flatMap(userRole -> {
+                                    userRole.setRoleId(role.getId());
+                                    return userRoleRepository.save(userRole);
+                        })
+                        .flatMap(userRole -> userProfileRepository.findById(userRole.getUserId()))
+                        .map(userProfile -> updateEntityRole(userProfile, role.getName()))
+                ).map(role -> appResponse(role, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_ROLE), BAD_REQUEST.value()));
     }
 
     private Mono<FullUserProfileRecord> getUserProfileRecord(UserProfile profile) {

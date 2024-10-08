@@ -149,7 +149,9 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     public Mono<AppResponse> resendOtp(String username, String email, String templateId) {
         String newOTP = AppUtil.generateOTP(6);
+        log.info("email {}\nuserName {}", email, username.length());
         return userRepository.findByUsername(username)
+                .doOnNext(user -> log.info("user: {}", user))
                 .flatMap(user -> verificationRepository.findByUserId(user.getId())
                 .flatMap(verification -> {
                             verification.setUserOtp(newOTP);
@@ -180,6 +182,13 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .flatMap(user -> sendMail(user, newOTP, email, templateId))
                 .onErrorResume(throwable ->
                         handleOnErrorResume(new AppException(DUPLICATE_ERROR), BAD_REQUEST.value()) );
+    }
+
+    public Mono<AppResponse> reActivateUser(String publicId, String templateId, VerificationType type) {
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> resendOtp(user.getId(), user.getUsername(), templateId, type))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()) );
     }
 
     public Mono<AppResponse> resetPasswordRequest(String email, String templateId) {

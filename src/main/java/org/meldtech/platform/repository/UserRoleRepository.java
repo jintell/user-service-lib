@@ -2,6 +2,7 @@ package org.meldtech.platform.repository;
 
 import org.meldtech.platform.domain.UserRole;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Mono;
 
 /**
  * @Author: Josiah Adetayo
@@ -9,4 +10,5 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
  * @Date: 12/6/23
  */
 public interface UserRoleRepository extends ReactiveCrudRepository<UserRole, Integer> {
+    Mono<UserRole> findByUserId(Integer userId);
 }

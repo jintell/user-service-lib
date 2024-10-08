@@ -7,5 +7,6 @@ package org.meldtech.platform.model.constant;
  */
 public enum VerificationType {
     PASSWORD_RESET,
+    RE_ACTIVATE,
     OTHERS
 }
