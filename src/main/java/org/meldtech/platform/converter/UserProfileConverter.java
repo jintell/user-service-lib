@@ -70,10 +70,20 @@ public class UserProfileConverter {
                 .build();
     }
 
-    public static synchronized UserProfile updateEntityRole(UserProfile profile, String newRole) {
-        UserSetting userSetting = convertToType(profile.getSettings().asString(), UserSetting.class);
-        profile.setSettings(Json.of(convertToType(new UserSetting(newRole, userSetting.isEmailVerified()), String.class)));
+    public static synchronized UserProfile updateEntitySettings(UserProfile profile, UserSetting setting) {
+        profile.setSettings(Json.of(convertToType(setting, String.class)));
         return profile;
+    }
+
+    public static  synchronized UserSetting mapToUserSetting(UserProfile profile) {
+        return convertToType(profile.getSettings().asString(), UserSetting.class);
+    }
+
+    public static  synchronized UserSetting updateUserSetting(UserSetting original, UserSetting setting) {
+        return UserSetting.builder()
+                .role(Objects.isNull(setting.role())? original.role() : setting.role())
+                .isEmailVerified(original.isEmailVerified())
+                .build();
     }
 
     public static synchronized List<UserProfileRecord> mapToRecordList(List<UserProfile> profiles) {

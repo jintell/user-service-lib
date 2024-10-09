@@ -12,6 +12,7 @@ import org.meldtech.platform.model.api.AppResponse;
 import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.api.response.FullUserProfileRecord;
 import org.meldtech.platform.model.api.response.UserMetrics;
+import org.meldtech.platform.model.dto.UserSetting;
 import org.meldtech.platform.repository.RoleRepository;
 import org.meldtech.platform.repository.UserProfileRepository;
 import org.meldtech.platform.repository.UserRepository;
@@ -23,7 +24,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
-import static org.meldtech.platform.converter.UserProfileConverter.updateEntityRole;
+import static org.meldtech.platform.converter.UserProfileConverter.*;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.setPage;
@@ -155,7 +156,8 @@ public class UserProfileService {
                                     return userRoleRepository.save(userRole);
                         })
                         .flatMap(userRole -> userProfileRepository.findById(userRole.getUserId()))
-                        .map(userProfile -> updateEntityRole(userProfile, role.getName()))
+                        .map(userProfile -> updateEntitySettings(userProfile,updateSettingRole(userProfile, role.getName())))
+                        .flatMap(userProfileRepository::save)
                 ).map(role -> appResponse(role, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_ROLE), BAD_REQUEST.value()));
     }
@@ -178,6 +180,11 @@ public class UserProfileService {
                         .profile(UserProfileConverter.mapToRecord(userProfile))
                         .build()
                 );
+    }
+
+    private UserSetting updateSettingRole(UserProfile profile, String role) {
+        UserSetting userSetting = mapToUserSetting(profile);
+        return updateUserSetting(userSetting, UserSetting.builder().role(role).build());
     }
 
     private Mono<Long> getTotalUserCount() {

@@ -3,10 +3,7 @@ package org.meldtech.platform.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.meldtech.platform.domain.Role;
-import org.meldtech.platform.domain.User;
-import org.meldtech.platform.domain.UserRole;
-import org.meldtech.platform.domain.Verification;
+import org.meldtech.platform.domain.*;
 import org.meldtech.platform.event.EmailEvent;
 import org.meldtech.platform.exception.AppException;
 import org.meldtech.platform.model.api.AppResponse;
@@ -33,6 +30,7 @@ import reactor.util.function.Tuple2;
 import java.util.Objects;
 
 
+import static org.meldtech.platform.converter.UserProfileConverter.*;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.model.constant.VerificationType.OTHERS;
 import static org.meldtech.platform.model.constant.VerificationType.PASSWORD_RESET;
@@ -65,7 +63,6 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
-    private final String company = "EGMS";
     private static final String INVALID_USER = "Invalid username";
     private static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
@@ -237,7 +234,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .flatMap( user ->  {
                     user.setEnabled(true);
                     return userRepository.save(user);
-                }).switchIfEmpty(
+                }).flatMap(this::updateEmailSettings)
+                .switchIfEmpty(
                         handleOnErrorResume(new AppException("Invalid User"), BAD_REQUEST.value())
                 );
     }
@@ -247,7 +245,21 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .subscribe();
     }
 
+    private Mono<User> updateEmailSettings(User user) {
+        return userProfileRepository.findById(getOrDefault(user.getId()))
+                .map(userProfile -> updateEntitySettings(userProfile,updateSettingEmail(userProfile)))
+                .flatMap(userProfileRepository::save)
+                .map(usr -> user)
+                .switchIfEmpty(Mono.just(user));
+    }
+
+    private UserSetting updateSettingEmail(UserProfile profile) {
+        UserSetting userSetting = mapToUserSetting(profile);
+        return updateUserSetting(userSetting, UserSetting.builder().isEmailVerified(true).build());
+    }
+
     private Mono<Boolean> sendMail(Verification verification, UserRecord accountToCreate) {
+        String company = "EGMS";
         return emailEvent.sendMail(GenericRequest.builder()
                 .to(accountToCreate.email())
                 .templateId(activationMailTemplateId)
