@@ -158,6 +158,7 @@ public class UserProfileService {
                         .flatMap(userRole -> userProfileRepository.findById(userRole.getUserId()))
                         .map(userProfile -> updateEntitySettings(userProfile,updateSettingRole(userProfile, role.getName())))
                         .flatMap(userProfileRepository::save)
+                        .map(UserProfileConverter::mapToRecord)
                 ).map(role -> appResponse(role, USER_PROFILE_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_ROLE), BAD_REQUEST.value()));
     }

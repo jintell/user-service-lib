@@ -144,6 +144,18 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 );
     }
 
+    public Mono<AppResponse> verifyPasswordResetOtp(String otp, PasswordRestRecord passwordRestRecord) {
+        return verificationRepository.findByUserOtp(otp)
+                .flatMap(verification -> {
+                    verification.setUserOtp(null);
+                    if(verification.getType().equals(PASSWORD_RESET.name())) deleteOtp(verification);
+                    return userRepository.findById(verification.getUserId());
+                }).flatMap(user -> changePassword(user.getPublicId(), passwordRestRecord))
+                .switchIfEmpty(
+                        handleOnErrorResume(new AppException("Invalid OTP Entered"), BAD_REQUEST.value())
+                );
+    }
+
     public Mono<AppResponse> resendOtp(String username, String email, String templateId) {
         String newOTP = AppUtil.generateOTP(6);
         log.info("email {}\nuserName {}", email, username.length());
@@ -157,14 +169,15 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                             return verificationRepository.save(verification)
                                     .map(v -> user);
                         }))
-                .flatMap(user -> sendMail(user, newOTP, email, templateId))
+                .flatMap(user -> sendMail(user, newOTP, email, email, templateId))
                 .switchIfEmpty(
                         handleOnErrorResume(new AppException(INVALID_EMAIL), BAD_REQUEST.value())
                 ).onErrorResume(t ->
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
-    public Mono<AppResponse> resendOtp(Integer userId, String email, String templateId, VerificationType type) {
+    public Mono<AppResponse> resendOtp(Integer userId, String email,  String firstName,
+                                       String templateId, VerificationType type) {
         String newOTP = AppUtil.generateOTP(6);
         log.info("resendOtp: {} -- {}", email, userId);
         return userRepository.findById(userId)
@@ -176,14 +189,14 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                                         .build() )
                                     .map(v -> user)
                         )
-                .flatMap(user -> sendMail(user, newOTP, email, templateId))
+                .flatMap(user -> sendMail(user, newOTP, email, Objects.nonNull(firstName)? firstName : email, templateId))
                 .onErrorResume(throwable ->
                         handleOnErrorResume(new AppException(DUPLICATE_ERROR), BAD_REQUEST.value()) );
     }
 
     public Mono<AppResponse> reActivateUser(String publicId, String templateId, VerificationType type) {
         return userRepository.findByPublicId(publicId)
-                .flatMap(user -> resendOtp(user.getId(), user.getUsername(), templateId, type))
+                .flatMap(user -> resendOtp(user.getId(), user.getUsername(),null, templateId, type))
                 .onErrorResume(t ->
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()) );
     }
@@ -193,6 +206,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         return userProfileRepository.findByEmail(email)
                 .flatMap(userProfile -> resendOtp(userProfile.getId(),
                         userProfile.getEmail(),
+                        userProfile.getFirstName(),
                         templateId,
                         PASSWORD_RESET))
                 .switchIfEmpty(handleOnErrorResume(
@@ -205,10 +219,15 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     public Mono<AppResponse> changePassword(String publicId, PasswordRestRecord restRecord){
         return userRepository.findByPublicId(publicId)
                 .flatMap(user -> {
-                    if(passwordEncoder.matches(restRecord.currentPassword(), user.getPassword())) {
+                    if(!restRecord.currentPassword().isBlank()) {
+                        if (passwordEncoder.matches(restRecord.currentPassword(), user.getPassword())) {
+                            user.setPassword(passwordEncoder.encode(restRecord.newPassword()));
+                            return userRepository.save(user);
+                        } else return handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value());
+                    }else {
                         user.setPassword(passwordEncoder.encode(restRecord.newPassword()));
                         return userRepository.save(user);
-                    }else return handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value());
+                    }
                 }).map(profileRecord -> appResponse(
                         profileRecord.getUsername() + "'s "+ USER_PASSWORD_MSG, USER_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
@@ -274,11 +293,11 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .build());
     }
 
-    private Mono<AppResponse> sendMail(User foundUser, String newOTP, String email, String templateId) {
+    private Mono<AppResponse> sendMail(User foundUser, String newOTP, String email, String firstName, String templateId) {
         return emailEvent.sendMail(GenericRequest.builder()
                         .to(email)
                         .templateId(templateId)
-                        .template(EmailTemplate.builder().link(email).otp(newOTP).build())
+                        .template(EmailTemplate.builder().firstName(firstName).otp(newOTP).build())
                         .build())
                 .doOnNext(aBoolean -> log.info("sendMail {}", aBoolean))
                 .map(r -> appResponse(OtpRecord.builder()
