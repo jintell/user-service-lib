@@ -83,6 +83,7 @@ public class UserProfileService {
                                 .phoneNumber(userProfile.phoneNumber())
                                 .language(userProfile.language())
                                 .email(userProfile.email())
+                                .profilePicture(userProfile.profilePicture())
                                 .settings(userProfile.settings())
                                 .userid(userId)
                                 .build())
