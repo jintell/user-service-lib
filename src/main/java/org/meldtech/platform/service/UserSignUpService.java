@@ -108,6 +108,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         .phoneNumber(accountToCreate.phone())
                         .firstName(accountToCreate.firstName())
                         .lastName(accountToCreate.lastName())
+                        .profilePicture(accountToCreate.profilePicture())
                         .settings(new UserSetting(accountToCreate.role(), false))
                 .build(), getOrDefault(newAccount.getId()))
                 .map(account -> newAccount);

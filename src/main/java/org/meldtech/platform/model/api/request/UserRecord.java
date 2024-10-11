@@ -20,5 +20,6 @@ public record UserRecord(String publicId,
                          @Email(message = "Email should be valid")
                          String email,
                          String phone,
+                         String profilePicture,
                          @NotBlank(message = "Valid Role is Required")
                          String role)  {}
