@@ -82,7 +82,7 @@ public class UserProfileConverter {
     public static  synchronized UserSetting updateUserSetting(UserSetting original, UserSetting setting) {
         return UserSetting.builder()
                 .role(Objects.isNull(setting.role())? original.role() : setting.role())
-                .isEmailVerified(original.isEmailVerified())
+                .isEmailVerified(setting.isEmailVerified())
                 .build();
     }
 
