@@ -32,8 +32,7 @@ import java.util.Objects;
 
 import static org.meldtech.platform.converter.UserProfileConverter.*;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
-import static org.meldtech.platform.model.constant.VerificationType.OTHERS;
-import static org.meldtech.platform.model.constant.VerificationType.PASSWORD_RESET;
+import static org.meldtech.platform.model.constant.VerificationType.*;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.getValueOrDefault;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -133,7 +132,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         return verificationRepository.findByUserOtp(otp)
                 .flatMap(verification -> {
                     verification.setUserOtp(null);
-                    if(verification.getType().equals(OTHERS.name())) deleteOtp(verification);
+                    if(verification.getType().equals(OTHERS.name()) || verification.getType().equals(RE_ACTIVATE.name()))
+                        deleteOtp(verification);
                     return activateUser(verification.getUserId())
                             .map(user -> appResponse(OtpRecord.builder()
                                     .message("Valid OTP")
