@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: ${SPRING_PROFILE}
+  config:
+    import: optional:configserver:http://${CONFIG_SERVER_HOST}:9088

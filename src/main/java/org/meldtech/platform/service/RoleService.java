@@ -30,8 +30,8 @@ public class RoleService {
                 .map(RoleConverter::mapToRecord)
                 .collectList()
                 .flatMap(roles -> paginatedResponse.getPageIntId(roles, roleRepository, setPage(settings)))
-                .doOnNext(registeredClientRecords -> log.info("Roles Records {}", registeredClientRecords))
-                .onErrorResume(t ->
-                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+                .doOnNext(registeredClientRecords -> log.info("Roles Records {}", registeredClientRecords));
+//                .onErrorResume(t ->
+//                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 }
