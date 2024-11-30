@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.meldtech.platform.event.EmailEvent;
 import org.meldtech.platform.exception.ApiResponseException;
 import org.meldtech.platform.repository.*;
+import org.meldtech.platform.service.UserProfileService;
 import org.meldtech.platform.service.UserSignUpService;
 import org.meldtech.platform.stub.PasswordResetStub;
 import org.mockito.InjectMocks;
@@ -39,6 +40,8 @@ class UserSignUpServiceTest {
     PasswordEncoder passwordEncoder;
     @Mock
     EmailEvent emailEvent;
+    @Mock
+    UserProfileService userProfileService;
     @InjectMocks
     UserSignUpService signUpService;
 
@@ -51,6 +54,8 @@ class UserSignUpServiceTest {
         when(verificationRepository.save(any())).thenReturn(Mono.just(verification(1, "009876", OTHERS)));
         when(userRoleRepository.save(any())).thenReturn(Mono.just(userRole()));
         when(emailEvent.sendMail(any())).thenReturn(Mono.just(emailRequest("009876")));
+        when(userProfileService.createUserProfile(any(), anyInt()))
+                .thenReturn(Mono.just(profileRecord()));
 
         StepVerifier.create(signUpService.createUser(userRecord()))
                 .expectSubscription()
@@ -67,6 +72,8 @@ class UserSignUpServiceTest {
         when(verificationRepository.delete(any())).thenReturn(Mono.empty());
         when(userRepository.findById(anyInt())).thenReturn(Mono.just(user()));
         when(userRepository.save(any())).thenReturn(Mono.just(user()));
+        when(userProfileRepository.findById(anyInt())).thenReturn(Mono.just(userProfile(1)));
+        when(userProfileRepository.save(any())).thenReturn(Mono.just(userProfile(1)));
 
         StepVerifier.create(signUpService.verifyOtp(UUID.randomUUID().toString()))
                 .expectSubscription()

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.meldtech.platform.exception.AppException;
 import org.meldtech.platform.exception.ClientError;
+import org.meldtech.platform.util.AppUtil;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;

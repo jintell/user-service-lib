@@ -19,11 +19,17 @@ import java.io.Serializable;
 public class AccessToken implements Serializable {
     @JsonProperty("access_token")
     private String accessToken;
+    @JsonProperty("accessToken")
+    private String accessTokenV2;
     @JsonProperty("token_type")
     private String tokenBearer;
+    @JsonProperty("tokenType")
+    private String tokenType;
     @JsonProperty("refresh_token")
     private String refreshToken;
     @JsonProperty("expires_in")
     private Long timeToLive;
+    @JsonProperty("expiresIn")
+    private Long ttl;
     private String scope;
 }

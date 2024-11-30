@@ -1,9 +1,15 @@
 package org.meldtech.platform.stub;
 
+import io.r2dbc.postgresql.codec.Json;
 import org.meldtech.platform.domain.*;
 import org.meldtech.platform.model.api.AppResponse;
+import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.api.request.UserRecord;
+import org.meldtech.platform.model.api.response.CompanyRecord;
+import org.meldtech.platform.model.api.response.FullUserProfileRecord;
 import org.meldtech.platform.model.constant.VerificationType;
+import org.meldtech.platform.model.dto.UserSetting;
+import org.meldtech.platform.model.dto.company.VerificationRequest;
 import org.meldtech.platform.model.event.EmailTemplate;
 import org.meldtech.platform.model.event.GenericRequest;
 import org.meldtech.platform.model.security.core.ClientSettings;
@@ -13,6 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+
+import static org.meldtech.platform.util.AppUtil.convertToType;
 
 public class AppResponseStub {
 
@@ -47,8 +55,42 @@ public class AppResponseStub {
                 .companyName(UUID.randomUUID().toString())
                 .website(UUID.randomUUID().toString())
                 .language(UUID.randomUUID().toString())
-                .settings(null)
+                .settings(Json.of(convertToType(UserSetting.builder()
+                        .isEmailVerified(true)
+                        .role("STANDARD")
+                        .build(), String.class)))
                 .build();
+    }
+
+    public static FullUserProfileRecord userProfileRecord() {
+        return FullUserProfileRecord
+                .builder()
+                .username("Name"+UUID.randomUUID().toString())
+                .publicId(UUID.randomUUID().toString())
+                .profile(UserProfileRecord.builder()
+                        .firstName("John")
+                        .lastName("Doe")
+                        .middleName("Smith")
+                        .phoneNumber(UUID.randomUUID().toString())
+                        .profilePicture(UUID.randomUUID().toString())
+                        .email(UUID.randomUUID().toString())
+                        .companyName(UUID.randomUUID().toString())
+                        .settings(null)
+                        .build())
+                .build();
+    }
+
+    public static UserProfileRecord profileRecord() {
+        return UserProfileRecord.builder()
+                        .firstName("John")
+                        .lastName("Doe")
+                        .middleName("Smith")
+                        .phoneNumber(UUID.randomUUID().toString())
+                        .profilePicture(UUID.randomUUID().toString())
+                        .email(UUID.randomUUID().toString())
+                        .companyName(UUID.randomUUID().toString())
+                        .settings(null)
+                        .build();
     }
 
     public static Role role(int id) {
@@ -133,8 +175,15 @@ public class AppResponseStub {
 
 
     public static UserRecord userRecord() {
-        return new UserRecord(UUID.randomUUID().toString(), "test@test.com", UUID.randomUUID().toString(),
-                "test@test.com", "+234815667281", "USER");
+        return new UserRecord(UUID.randomUUID().toString(),
+                "test@test.com",
+                UUID.randomUUID().toString(),
+                "smith",
+                "Rowe",
+                "test@test.com",
+                "+234815667281",
+                UUID.randomUUID().toString(),
+                "USER");
     }
 
 
@@ -153,6 +202,32 @@ public class AppResponseStub {
 
     public static List<Country> countries() {
         return List.of(country(1), country(2), country(3));
+    }
+
+    public static Company company(int id) {
+        return Company.builder()
+                .id(id)
+                .idNumber(UUID.randomUUID().toString())
+                .name(UUID.randomUUID().toString())
+                .address(UUID.randomUUID().toString())
+                .type(UUID.randomUUID().toString())
+                .details(null)
+                .createdOn(Instant.now())
+                .build();
+    }
+
+    public static CompanyRecord companyRecord(int id) {
+        return CompanyRecord.builder()
+                .idNumber(UUID.randomUUID().toString())
+                .name(UUID.randomUUID().toString())
+                .address(UUID.randomUUID().toString())
+                .type(UUID.randomUUID().toString())
+                .details(null)
+                .build();
+    }
+
+    public static VerificationRequest verifyRequest() {
+        return new VerificationRequest(UUID.randomUUID().toString(), "","", "");
     }
 
     public static <T> AppResponse appResponse(T item) {

@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono;
  * @Date: 12/6/23
  */
 public interface UserRepository extends ReactiveCrudRepository<User, Integer> {
-    Mono<User> findById(int id);
     Mono<User> findByUsername(String username);
     Mono<User> findByUsernameAndEnabled(String username, boolean isEnabled);
     Mono<User> findByPublicId(String publicId);

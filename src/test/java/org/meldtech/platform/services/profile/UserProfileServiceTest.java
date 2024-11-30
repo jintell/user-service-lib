@@ -124,7 +124,7 @@ public class UserProfileServiceTest {
         when(profileRepository.save(any()))
                 .thenReturn(Mono.just(AppResponseStub.userProfile(1)));
 
-        StepVerifier.create(userProfileService.updateUserProfile(createFullUserProfileRecord()))
+        StepVerifier.create(userProfileService.updateUserProfile(createFullUserProfileRecord(), true))
                 .expectSubscription()
                 .expectNextMatches(Objects::nonNull)
                 .expectComplete()
