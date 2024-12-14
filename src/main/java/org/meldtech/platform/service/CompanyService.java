@@ -32,6 +32,12 @@ public class CompanyService {
         return getCompany(verifyRequest, type);
     }
 
+    public Mono<AppResponse> getTotalOperator() {
+        log.info("Getting total registered operators");
+        return companyRepository.count()
+                .map(company -> appResponse(company, COMPANY_MSG));
+    }
+
     private Mono<AppResponse> getCompany(VerificationRequest verifyRequest, VerifyType type) {
         log.info("Getting Company Record by ", verifyRequest.regNumber());
         return validateCompany(verifyRequest.regNumber().replace("RC", ""))
