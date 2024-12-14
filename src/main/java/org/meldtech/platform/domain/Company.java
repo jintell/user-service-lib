@@ -26,6 +26,7 @@ public class Company implements Serializable, Persistable<Integer> {
     private String name;
     private String address;
     private String type;
+    private String contact;
     private Json details;
     private Instant createdOn;
 

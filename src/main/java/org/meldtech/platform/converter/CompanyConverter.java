@@ -21,6 +21,7 @@ public class CompanyConverter {
                     .address(dto.address())
                     .idNumber(dto.idNumber())
                     .type(dto.type())
+                    .contact(dto.contact())
                     .details(Objects.isNull(dto.details()) ? null :
                             Json.of(convertToType(dto.details(), String.class)))
                     .build();
@@ -32,6 +33,7 @@ public class CompanyConverter {
                     .address(entity.getAddress())
                     .idNumber(entity.getIdNumber())
                     .type(entity.getType())
+                    .contact(entity.getContact())
                     .details(Objects.isNull(entity.getDetails())? null :
                             convertToType(entity.getDetails().asString(), Object.class))
                     .createdOn(entity.getCreatedOn().toString())
@@ -44,6 +46,7 @@ public class CompanyConverter {
                     .address(entity.cac().branchAddress())
                     .idNumber(entity.cac().rcNumber())
                     .type(VerifyType.CAC.name())
+                    .contact(entity.cac().companyEmail())
                     .details(entity)
                     .build();
     }
@@ -54,6 +57,7 @@ public class CompanyConverter {
                     .address(entity.nin().residence().address1())
                     .idNumber(entity.nin().nin())
                     .type(VerifyType.NIN.name())
+                    .contact(entity.nin().phone())
                     .details(entity)
                     .build();
     }

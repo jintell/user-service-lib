@@ -11,5 +11,6 @@ public record CompanyRecord(String idNumber,
                             String name,
                             String address,
                             String type,
+                            String contact,
                             Object details,
                             String createdOn) {}
