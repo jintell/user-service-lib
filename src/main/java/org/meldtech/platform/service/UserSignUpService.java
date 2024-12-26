@@ -62,6 +62,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
+    @Value("${email.verification.link}")
+    private String emailVerificationLink;
     private static final String INVALID_USER = "Invalid username";
     private static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
@@ -279,12 +281,12 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     }
 
     private Mono<Boolean> sendMail(Verification verification, UserRecord accountToCreate) {
-        String company = "EGMS";
+        String company = "ESGC";
         return emailEvent.sendMail(GenericRequest.builder()
                 .to(accountToCreate.email())
                 .templateId(activationMailTemplateId)
-                .template(EmailTemplate.builder().link(
-                                accountToCreate.email())
+                .template(EmailTemplate.builder()
+                        .link(emailVerificationLink)
                         .otp(verification.getUserOtp())
                         .firstName(accountToCreate.firstName())
                         .company(company)
@@ -298,7 +300,14 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         return emailEvent.sendMail(GenericRequest.builder()
                         .to(email)
                         .templateId(templateId)
-                        .template(EmailTemplate.builder().firstName(firstName).otp(newOTP).build())
+                        .template(EmailTemplate.builder()
+                                .link(emailVerificationLink)
+                                .firstName(firstName)
+                                .otp(newOTP)
+                                .company("")
+                                .username("")
+                                .password("")
+                                .build())
                         .build())
                 .doOnNext(aBoolean -> log.info("sendMail {}", aBoolean))
                 .map(r -> appResponse(OtpRecord.builder()
