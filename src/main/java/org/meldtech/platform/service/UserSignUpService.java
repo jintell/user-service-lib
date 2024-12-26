@@ -242,6 +242,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 .flatMap( user ->  {
                     user.setEnabled(false);
                     return userRepository.save(user)
+                            .flatMap(this::updateEmailSettings)
                             .map(cred -> appResponse("[]",
                                             user.getUsername() + " has been De-Activated"));
                         }
@@ -269,15 +270,15 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private Mono<User> updateEmailSettings(User user) {
         return userProfileRepository.findById(getOrDefault(user.getId()))
-                .map(userProfile -> updateEntitySettings(userProfile,updateSettingEmail(userProfile)))
+                .map(userProfile -> updateEntitySettings(userProfile,updateSettingEmail(userProfile, user.isEnabled())))
                 .flatMap(userProfileRepository::save)
                 .map(usr -> user)
                 .switchIfEmpty(Mono.just(user));
     }
 
-    private UserSetting updateSettingEmail(UserProfile profile) {
+    private UserSetting updateSettingEmail(UserProfile profile, boolean status) {
         UserSetting userSetting = mapToUserSetting(profile);
-        return updateUserSetting(userSetting, UserSetting.builder().isEmailVerified(true).build());
+        return updateUserSetting(userSetting, UserSetting.builder().isEmailVerified(status).build());
     }
 
     private Mono<Boolean> sendMail(Verification verification, UserRecord accountToCreate) {
