@@ -113,6 +113,10 @@ public class AppResponseStub {
                 .build();
     }
 
+    public static List<User> users() {
+        return List.of(user(), user(), user());
+    }
+
     public static UserRole userRole() {
         return UserRole
                 .builder()
@@ -198,6 +202,22 @@ public class AppResponseStub {
 
     public static List<Role> roles() {
         return List.of(role(1), role(2), role(3));
+    }
+
+    public static UserRole userRoles() {
+        return UserRole.builder()
+                .id(1)
+                .roleId(1)
+                .userId(1)
+                .build();
+    }
+
+    public static RolePermission rolePermission() {
+        return RolePermission.builder()
+                .id(1)
+                .roleId(1)
+                .permission(null)
+                .build();
     }
 
     public static List<Country> countries() {

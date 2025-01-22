@@ -4,10 +4,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.meldtech.platform.commons.PaginatedResponse;
+import org.meldtech.platform.domain.User;
 import org.meldtech.platform.domain.UserProfile;
 import org.meldtech.platform.exception.ApiResponseException;
+import org.meldtech.platform.repository.RoleRepository;
 import org.meldtech.platform.repository.UserProfileRepository;
 import org.meldtech.platform.repository.UserRepository;
+import org.meldtech.platform.repository.UserRoleRepository;
 import org.meldtech.platform.service.UserProfileService;
 import org.meldtech.platform.stub.AppResponseStub;
 import org.meldtech.platform.util.ReportSettings;
@@ -21,7 +24,7 @@ import reactor.test.StepVerifier;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.meldtech.platform.stub.AppResponseStub.userProfiles;
+import static org.meldtech.platform.stub.AppResponseStub.*;
 import static org.meldtech.platform.stub.FullUserProfileRecordStub.createFullUserProfileRecord;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -32,6 +35,10 @@ public class UserProfileServiceTest {
     UserRepository userRepository;
     @Mock
     UserProfileRepository profileRepository;
+    @Mock
+    RoleRepository roleRepository;
+    @Mock
+    UserRoleRepository roleUserRepository;
     @Mock
     PaginatedResponse paginatedResponse;
     @InjectMocks
@@ -160,4 +167,68 @@ public class UserProfileServiceTest {
                 .verify();
 
     }
+
+    @DisplayName("Get User Metrics ")
+    @Test
+    void whenGetUserMetrics_thenReturnAppResponse() {
+        when(userRepository.count())
+                .thenReturn(Mono.just(2000L));
+
+        when(userRepository.findByEnabled(anyBoolean()))
+                .thenReturn(Flux.just(users().toArray(new User[0])));
+
+       StepVerifier.create(userProfileService.getUserMetrics())
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+    }
+
+    @DisplayName("Search for User ")
+    @Test
+    void givenSearchValue_whenGetUsers_thenReturnAppResponse() {
+        when(profileRepository.getSearchResult(any(), any(), any(), any(), any()))
+                .thenReturn(Flux.just(userProfiles().toArray(new UserProfile[0])));
+
+        when(userRepository.findById(anyInt()))
+                .thenReturn(Mono.just(user()));
+
+        when(paginatedResponse.getPageIntId(any(), any(), any()))
+                .thenReturn(Mono.just(AppResponseStub.appResponses(userProfiles())));
+
+        StepVerifier.create(userProfileService.searchByValue(ReportSettings.instance().page(1).size(10)))
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+    }
+
+    @DisplayName("Change user permission ")
+    @Test
+    void givenPublicIdAndPassword_whenChangePermission_thenReturnAppResponse() {
+        when(roleRepository.findByName(anyString()))
+                .thenReturn(Mono.just(role(1)));
+
+        when(userRepository.findByPublicId(anyString()))
+                .thenReturn(Mono.just(user()));
+
+        when(roleUserRepository.findByUserId(anyInt()))
+                .thenReturn(Mono.just(userRole()));
+
+        when(roleUserRepository.save(any()))
+                .thenReturn(Mono.just(userRole()));
+
+        when(profileRepository.findById(anyInt()))
+                .thenReturn(Mono.just(userProfile(1)));
+
+        when(profileRepository.save(any()))
+                .thenReturn(Mono.just(userProfile(1)));
+
+        StepVerifier.create(userProfileService.changePermission(UUID.randomUUID().toString(), "ADMIN"))
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+    }
+
 }
