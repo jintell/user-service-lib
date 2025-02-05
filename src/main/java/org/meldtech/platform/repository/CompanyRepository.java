@@ -7,5 +7,6 @@ import reactor.core.publisher.Mono;
 
 public interface CompanyRepository extends ReactiveCrudRepository<Company, Integer> {
     Mono<Company> findByIdNumber(String idNumber);
+    Mono<Company> findByName(String name);
     @NotNull Mono<Long> count();
 }
