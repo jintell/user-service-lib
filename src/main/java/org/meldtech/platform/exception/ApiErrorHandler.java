@@ -1,5 +1,7 @@
 package org.meldtech.platform.exception;
 
+import org.meldtech.platform.service.CountryService;
+import org.meldtech.platform.util.LoggerHelper;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -12,11 +14,13 @@ import static org.meldtech.platform.util.AppUtil.getMapper;
  * @Date: 12/6/23
  */
 public class ApiErrorHandler {
+    private static final LoggerHelper log = LoggerHelper.newInstance(ApiErrorHandler.class.getName());
     private ApiErrorHandler() {}
 
     public static <T> Mono<T> handleOnErrorResume(Throwable err, int httpStatusCode) {
         HttpStatus status = getFromHttpStatusCode(httpStatusCode);
         String message = err.getMessage();
+        log.error("Error occurred while processing API response", err);
 
         if(err instanceof WebClientResponseException) {
             ApiGlobalErrorAttributes.AtomicApiError atomicApiError = getMapper()
