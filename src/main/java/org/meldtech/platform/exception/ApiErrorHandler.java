@@ -20,7 +20,6 @@ public class ApiErrorHandler {
     public static <T> Mono<T> handleOnErrorResume(Throwable err, int httpStatusCode) {
         HttpStatus status = getFromHttpStatusCode(httpStatusCode);
         String message = err.getMessage();
-        log.error("Error occurred while processing API response", err);
 
         if(err instanceof WebClientResponseException) {
             ApiGlobalErrorAttributes.AtomicApiError atomicApiError = getMapper()
