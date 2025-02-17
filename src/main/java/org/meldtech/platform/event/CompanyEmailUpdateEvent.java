@@ -46,8 +46,8 @@ public class CompanyEmailUpdateEvent {
     }
 
     private Mono<Company> construct(Company company, CompanyData request) {
-        if(Objects.nonNull(company) && Objects.nonNull(request) &&
-                company.getContact().trim().equalsIgnoreCase(request.email().trim())) {
+        if(Objects.nonNull(company) && Objects.nonNull(request) && Objects.nonNull(company.getContact())
+                && company.getContact().trim().equalsIgnoreCase(request.email().trim())) {
             return Mono.empty();
         }
         company.setContact(request.email().trim());
