@@ -43,12 +43,17 @@ public class CompanyConverter {
     public static synchronized CompanyRecord mapToRecord(CacRecord entity) {
        return  CompanyRecord.builder()
                     .name(entity.cac().companyName())
-                    .address(entity.cac().branchAddress())
+                    .address(getAddress(entity))
                     .idNumber(entity.cac().rcNumber())
                     .type(VerifyType.CAC.name())
                     .contact(entity.cac().companyEmail())
                     .details(entity)
                     .build();
+    }
+
+    private static String getAddress(CacRecord entity) {
+        if(Objects.isNull(entity) || Objects.isNull(entity.cac())) return "";
+        return entity.cac().headOfficeAddress();
     }
 
     public static synchronized CompanyRecord mapToRecord(NinRecord entity) {
