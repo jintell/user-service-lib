@@ -40,7 +40,7 @@ public class CompanyService {
 
     private Mono<AppResponse> getCompany(VerificationRequest verifyRequest, VerifyType type) {
         log.info("Getting Company Record by ", verifyRequest.regNumber());
-        return validateCompany(verifyRequest.regNumber().replace("RC", ""))
+        return validateCompany(verifyRequest.regNumber().replaceAll("[a-zA-Z]", ""))
                 .map(CompanyConverter::mapToRecord)
                 .map(countryRecord -> appResponse(countryRecord, COMPANY_MSG))
                 .switchIfEmpty(doIdentityVerification(verifyRequest, type));

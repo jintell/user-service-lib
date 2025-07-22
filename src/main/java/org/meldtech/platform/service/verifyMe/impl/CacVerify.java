@@ -44,8 +44,7 @@ public class CacVerify implements VerifyMeStrategy {
                 .map(CompanyConverter::mapToRecord)
                 .map(CompanyConverter::mapToEntity)
                 .flatMap(this::saveResponse)
-                .onErrorResume(t ->
-                        handleOnErrorResume(new AppException(INVALID_COMPANY), BAD_REQUEST.value()));
+                .onErrorResume(this::logAndHandleError);
     }
 
     private Mono<CacRecord> performVerification(VerificationRequest request, AccessToken accessToken) {
@@ -62,5 +61,10 @@ public class CacVerify implements VerifyMeStrategy {
         headers.put("Content-Type", MediaType.APPLICATION_JSON_VALUE);;
         headers.put("Authorization", "Bearer " + accessToken);
         return headers;
+    }
+
+    private <T> Mono<T> logAndHandleError(Throwable t) {
+        log.error("Error during verification", t);
+        return handleOnErrorResume(new AppException(INVALID_COMPANY), BAD_REQUEST.value());
     }
 }
