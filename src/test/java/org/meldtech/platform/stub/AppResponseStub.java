@@ -8,7 +8,7 @@ import org.meldtech.platform.model.api.request.UserRecord;
 import org.meldtech.platform.model.api.response.CompanyRecord;
 import org.meldtech.platform.model.api.response.FullUserProfileRecord;
 import org.meldtech.platform.model.constant.VerificationType;
-import org.meldtech.platform.model.dto.UserSetting;
+import org.meldtech.platform.model.dto.*;
 import org.meldtech.platform.model.dto.company.VerificationRequest;
 import org.meldtech.platform.model.event.EmailTemplate;
 import org.meldtech.platform.model.event.GenericRequest;
@@ -16,6 +16,7 @@ import org.meldtech.platform.model.security.core.ClientSettings;
 import org.meldtech.platform.model.security.core.TokenSettings;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -39,6 +40,33 @@ public class AppResponseStub {
                 .clientAuthenticationMethods("private_secret_jwk")
                 .clientSettings(ClientSettings.builder().build().toString())
                 .tokenSettings(TokenSettings.builder().build().toString())
+                .build();
+    }
+
+    public static OAuth2RegisteredClientResponse clientResponse() {
+        return OAuth2RegisteredClientResponse
+                .builder()
+                .appRegistration(AppRegistrationRecord.builder()
+                        .applicationId(UUID.randomUUID().toString())
+                        .clientId(UUID.randomUUID().toString())
+                        .clientName("Chocolate Test")
+                        .clientSecret(UUID.randomUUID().toString())
+                        .scope("open_id")
+                        .redirectUrl("http://localhost:9000/home")
+                        .enabled(true)
+                        .build())
+                .client(OAuth2RegisteredClientRecord.builder()
+                        .clientId(UUID.randomUUID().toString())
+                        .clientName("Chocolate Test")
+                        .clientSecret(UUID.randomUUID().toString())
+                        .scopes(Collections.singleton("open_id"))
+                        .redirectUris(Collections.singleton("http://localhost:9000/home"))
+                        .postLogoutRedirectUris(Collections.singleton("http://localhost:9000/sign-in"))
+                        .authorizationGrantTypes(Collections.singleton("authorization_code"))
+                        .clientAuthenticationMethods(Collections.singleton("private_secret_jwk"))
+                        .clientSettings(ClientSettingsRequest.builder().build())
+                        .tokenSettings(TokenSettingsRequest.builder().build())
+                        .build())
                 .build();
     }
 
@@ -248,6 +276,20 @@ public class AppResponseStub {
 
     public static VerificationRequest verifyRequest() {
         return new VerificationRequest(UUID.randomUUID().toString(), "","", "");
+    }
+
+    public static AppRegistration appRegistration() {
+        return AppRegistration
+                .builder()
+                .id(1L)
+                .clientId(UUID.randomUUID().toString())
+                .clientName("Chocolate Test")
+                .clientSecret(UUID.randomUUID().toString())
+                .scope("open_id")
+                .redirectUrl("http://localhost:9000/home")
+                .applicationId(UUID.randomUUID().toString())
+                .enabled(true)
+                .build();
     }
 
     public static <T> AppResponse appResponse(T item) {

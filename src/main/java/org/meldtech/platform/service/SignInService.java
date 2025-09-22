@@ -17,7 +17,6 @@ import org.meldtech.platform.service.encoding.MessageEncoding;
 import org.meldtech.platform.service.template.UserSignInTemplate;
 import org.meldtech.platform.util.AppUtil;
 import org.meldtech.platform.util.cipher.Crypto;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

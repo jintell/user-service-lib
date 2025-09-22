@@ -1,5 +1,6 @@
 package org.meldtech.platform.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.meldtech.platform.util.AppUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,15 +15,12 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ResourceOwnerService {
-    @Value("${oauth2.client.id}")
-    private String clientId;
+    private final OAuth2RegisteredClientService authService;
+
     @Value("${oauth2.authorize.url}")
     private String authorizeUrl;
-    @Value("${oauth2.authorize.scope}")
-    private String authorizeScope;
-    @Value("${oauth2.authorization.redirect_uri}")
-    private String redirectUri;
     @Value("${oauth2.authorize.challengeMethod}")
     private String challengeMethod;
     @Value("${oauth2.logout.url}")
@@ -34,25 +32,29 @@ public class ResourceOwnerService {
      * will reject a token request with a mismatched code_verifier. See Section 7.6 for more details.
      * @return Mono<String>
      */
-    public Mono<String> requestAuthorizedUrl(String deviceId) {
+    public Mono<String> requestAuthorizedUrl(String deviceId, String appId) {
+        System.err.println("Requesting Authorized URL for App:");
         return Mono.just(generateCodeChallenge(deviceId))
-                .map(s -> createAuthorizeRequest(s, deviceId));
+                .flatMap(s -> createAuthorizeRequest(s, deviceId, appId));
     }
 
     public Mono<String> requestLogoutEndpoint() {
         return Mono.just(logoutUrl);
     }
 
-    private String createAuthorizeRequest(String challenge, String state) {
-        return String.format("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&" +
-                        "code_challenge=%s&code_challenge_method=%s&state=%s",
-                authorizeUrl,
-                clientId,
-                redirectUri,
-                authorizeScope,
-                challenge,
-                challengeMethod,
-                state);
+    private Mono<String> createAuthorizeRequest(String challenge, String state, String appId) {
+        return authService.getApp(appId)
+                        .map(appRegistrationRecord ->
+                                String.format("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&" +
+                                            "code_challenge=%s&code_challenge_method=%s&state=%s",
+                                        authorizeUrl,
+                                        appRegistrationRecord.clientId(),
+                                        appRegistrationRecord.redirectUrl(),
+                                        appRegistrationRecord.scope(),
+                                        challenge,
+                                        challengeMethod,
+                                        state)
+                        );
     }
 
     private String generateCodeChallenge(String deviceId) {

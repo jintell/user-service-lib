@@ -1,11 +1,14 @@
 package org.meldtech.platform.util;
 
+import org.slf4j.Logger;
+
 /**
  * @Author: Josiah Adetayo
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com
  * @Date: 1/11/24
  */
 public abstract class AppError {
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(AppError.class);
     private AppError() {}
     private static final String DUPLICATE = "Unique";
     private static final String DUPLICATE_MSG = "Record already exists. Please check your entries and resend again!";
@@ -16,6 +19,7 @@ public abstract class AppError {
     private static final String DEFAULT_MSG = "Could not process request at this time. Please contact the admin";
 
     public static String massage(String error) {
+        logger.error("Error Message: {}", error);
         if(error.toLowerCase().contains(DUPLICATE.toLowerCase())) return DUPLICATE_MSG;
         else if(error.contains(NOT_FOUND)) return error.split(NOT_FOUND)[1].replace("\"", "");
         else if(error.contains(BAD_REQUEST)) return error.split(BAD_REQUEST)[1].replace("\"", "");

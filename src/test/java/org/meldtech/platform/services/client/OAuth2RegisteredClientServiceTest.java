@@ -1,12 +1,15 @@
 package org.meldtech.platform.services.client;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.meldtech.platform.commons.PaginatedResponse;
 import org.meldtech.platform.domain.OAuth2RegisteredClient;
 import org.meldtech.platform.exception.ApiResponseException;
+import org.meldtech.platform.repository.AppRegistrationRepository;
 import org.meldtech.platform.repository.Oauth2RegisteredClientRepository;
+import org.meldtech.platform.service.EncDecService;
 import org.meldtech.platform.service.OAuth2RegisteredClientService;
 import org.meldtech.platform.stub.AppResponseStub;
 import org.meldtech.platform.stub.ClientRequestStub;
@@ -22,7 +25,7 @@ import reactor.test.StepVerifier;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.meldtech.platform.stub.AppResponseStub.create;
+import static org.meldtech.platform.stub.AppResponseStub.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -32,20 +35,31 @@ public class OAuth2RegisteredClientServiceTest {
     @Mock
     Oauth2RegisteredClientRepository clientRepository;
     @Mock
+    AppRegistrationRepository appRegistrationRepository;
+    @Mock
     PasswordEncoder passwordEncoder;
     @Mock
     PaginatedResponse paginatedResponse;
+    @Mock
+    EncDecService encDecService;
     @InjectMocks
     OAuth2RegisteredClientService clientService;
 
     @DisplayName("Add New OAuth2 Client")
     @Test
-    void givenClient_whenCreateClient_thenReturnClient() {
+    void givenClient_whenCreateClient_thenReturnClient() throws Exception {
+        String encrypted = UUID.randomUUID().toString();
         when(clientRepository.save(any()))
                 .thenReturn(Mono.just(create()));
 
         when(passwordEncoder.encode(any()))
                 .thenReturn(UUID.randomUUID().toString());
+
+        when(encDecService.encrypt(anyString()))
+                .thenReturn(encrypted);
+
+        when(appRegistrationRepository.save(any()))
+                .thenReturn(Mono.just(appRegistration()));
 
         StepVerifier.create(clientService.createClient(ClientRequestStub.getClientRecord()))
                 .expectSubscription()
@@ -62,7 +76,10 @@ public class OAuth2RegisteredClientServiceTest {
                 .thenReturn(Flux.just(AppResponseStub.clients().toArray(new OAuth2RegisteredClient[0])));
 
         when(paginatedResponse.getData(any(), any(), any()))
-                .thenReturn(Mono.just(AppResponseStub.appResponse(create())));
+                .thenReturn(Mono.just(AppResponseStub.appResponse(clientResponse())));
+
+        when(appRegistrationRepository.findByClientId(anyString()))
+                .thenReturn(Mono.just(appRegistration()));
 
         StepVerifier.create(clientService.getClients(ReportSettings.instance().page(1).size(10)))
                 .expectSubscription()
@@ -77,6 +94,9 @@ public class OAuth2RegisteredClientServiceTest {
     void givenClientId_whenGetClient_thenReturnAppResponse() {
         when(clientRepository.findByClientId(anyString()))
                 .thenReturn(Mono.just(create()));
+
+        when(appRegistrationRepository.findByClientId(anyString()))
+                .thenReturn(Mono.just(appRegistration()));
 
         StepVerifier.create(clientService.getClients(UUID.randomUUID().toString()))
                 .expectSubscription()
@@ -128,6 +148,28 @@ public class OAuth2RegisteredClientServiceTest {
 
         StepVerifier.create(clientService.getClients(UUID.randomUUID().toString()))
                 .expectError(ApiResponseException.class)
+                .verify();
+
+    }
+
+    @DisplayName("Get Registered App")
+    @Test
+    void givenAppId_whenGetAppRegistrationId_thenReturnAppRegistrationRecord() throws Exception {
+        String decrypted = UUID.randomUUID().toString();
+        when(encDecService.decrypt(anyString()))
+                .thenReturn(decrypted);
+        when(appRegistrationRepository.findByApplicationId(anyString()))
+                .thenReturn(Mono.just(appRegistration()));
+
+        StepVerifier.create(clientService.getApp(UUID.randomUUID().toString()))
+                .expectSubscription()
+                .expectNextMatches(result -> {
+                    Assertions.assertThat(result).isNotNull();
+                    Assertions.assertThat(result.clientSecret()).isEqualTo(decrypted);
+                    Assertions.assertThat(result.enabled()).isTrue();
+                    return true;
+                })
+                .expectComplete()
                 .verify();
 
     }

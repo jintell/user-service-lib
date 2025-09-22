@@ -5,7 +5,9 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.meldtech.platform.domain.OAuth2RegisteredClient;
+import org.meldtech.platform.model.dto.AppRegistrationRecord;
 import org.meldtech.platform.model.dto.OAuth2RegisteredClientRecord;
+import org.meldtech.platform.model.dto.OAuth2RegisteredClientResponse;
 import org.meldtech.platform.model.security.ClientSettingsConverter;
 import org.meldtech.platform.model.security.TokenSettingsConverter;
 import org.meldtech.platform.util.AppUtil;
@@ -75,6 +77,33 @@ public class RegisteredClientConverter {
 
     }
 
+    public static OAuth2RegisteredClientResponse toRecord(OAuth2RegisteredClientRecord record, AppRegistrationRecord appRecord) {
+        return OAuth2RegisteredClientResponse.builder()
+                .client(OAuth2RegisteredClientRecord.builder()
+                        .clientId(record.clientId())
+                        .clientName(record.clientName())
+                        .clientSecret(masked(record.clientSecret()))
+                        .authorizationGrantTypes(record.authorizationGrantTypes())
+                        .clientAuthenticationMethods(record.clientAuthenticationMethods())
+                        .clientIdIssuedAt(record.clientIdIssuedAt())
+                        .scopes(record.scopes())
+                        .redirectUris(record.redirectUris())
+                        .postLogoutRedirectUris(record.postLogoutRedirectUris())
+                        .tokenSettings(record.tokenSettings())
+                        .clientSettings(record.clientSettings())
+                        .build())
+                .appRegistration(AppRegistrationRecord.builder()
+                        .applicationId(appRecord.applicationId())
+                        .clientId(appRecord.clientId())
+                        .clientName(appRecord.clientName())
+                        .clientSecret(masked(appRecord.clientSecret()))
+                        .redirectUrl(appRecord.redirectUrl())
+                        .scope(appRecord.scope())
+                        .enabled(appRecord.enabled())
+                        .build())
+                .build();
+    }
+
     private static String concat(Set<String> values) {
         return String.join(",", values);
     }
@@ -99,6 +128,12 @@ public class RegisteredClientConverter {
     public static String sanitize(String values) {
         String regex = "[*|!|&|^|%|$|#|`|~]+";
         return values.replaceAll(regex, "");
+    }
+
+    private static String masked(String value) {
+        if(Objects.isNull(value)) return "**";
+        else if(value.length() < 4) return "****";
+        return value.substring(0, 3) + "*****";
     }
 
 }
