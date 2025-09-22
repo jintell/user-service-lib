@@ -3,11 +3,16 @@ package org.meldtech.platform.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.meldtech.platform.commons.PaginatedResponse;
+import org.meldtech.platform.converter.AppRegistrationConverter;
 import org.meldtech.platform.converter.RegisteredClientConverter;
+import org.meldtech.platform.domain.AppRegistration;
 import org.meldtech.platform.domain.OAuth2RegisteredClient;
 import org.meldtech.platform.exception.AppException;
 import org.meldtech.platform.model.api.AppResponse;
+import org.meldtech.platform.model.dto.AppRegistrationRecord;
 import org.meldtech.platform.model.dto.OAuth2RegisteredClientRecord;
+import org.meldtech.platform.model.dto.OAuth2RegisteredClientResponse;
+import org.meldtech.platform.repository.AppRegistrationRepository;
 import org.meldtech.platform.repository.Oauth2RegisteredClientRepository;
 import org.meldtech.platform.util.AppError;
 import org.meldtech.platform.util.ReportSettings;
@@ -15,6 +20,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import static org.meldtech.platform.converter.AppRegistrationConverter.toEntity;
+import static org.meldtech.platform.converter.RegisteredClientConverter.toRecord;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.setPage;
@@ -26,8 +37,10 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RequiredArgsConstructor
 public class OAuth2RegisteredClientService {
     private final Oauth2RegisteredClientRepository clientRepository;
+    private final AppRegistrationRepository appRegistrationRepository;
     private final PasswordEncoder passwordEncoder;
     private final PaginatedResponse paginatedResponse;
+    private final EncDecService encDecService;
 
     private static final String SUCCESS_MSG = "Get Oauth2 Client(s) Successfully";
     private static final String CREATED_SUCCESS_MSG = "Oauth2 Client(s) Successfully Created";
@@ -40,6 +53,8 @@ public class OAuth2RegisteredClientService {
                 .doOnNext(registeredClientRecord -> log.info("Saved New Record {}", registeredClientRecord))
                 .map(RegisteredClientConverter::mapToRecord)
                 .doOnNext(registeredClientRecord -> log.info("Registered Client New Record {}", registeredClientRecord))
+                .flatMap(newRecord -> registerApp(record))
+                .doOnNext(registeredClientRecord -> log.info("Registered New Application {}", registeredClientRecord))
                 .map(newRecord -> appResponse(newRecord, CREATED_SUCCESS_MSG))
                 .onErrorResume(t ->
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
@@ -49,6 +64,7 @@ public class OAuth2RegisteredClientService {
         return validateClient(clientId)
                 .map(RegisteredClientConverter::mapToRecord)
                 .doOnNext(registeredClientRecord -> log.info("Registered Client Record {}", registeredClientRecord))
+                .flatMap(this::getAppByClientId)
                 .map(record -> appResponse(record, SUCCESS_MSG))
                 .onErrorResume(t ->
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
@@ -57,6 +73,7 @@ public class OAuth2RegisteredClientService {
     public Mono<AppResponse> getClients(ReportSettings settings) {
         return clientRepository.findAllBy(setPage(settings))
                 .map(RegisteredClientConverter::mapToRecord)
+                .flatMap(this::getAppByClientId)
                 .collectList()
                 .flatMap(clients -> paginatedResponse.getData(clients, clientRepository, setPage(settings)))
                 .doOnNext(registeredClientRecords -> log.info("Registered Client Records {}", registeredClientRecords))
@@ -82,9 +99,66 @@ public class OAuth2RegisteredClientService {
                 .then(Mono.fromCallable(() -> appResponse( "Client Deleted", DELETE_SUCCESS_MSG)));
     }
 
+    public Mono<AppRegistrationRecord> getApp(String appId) {
+        return appRegistrationRepository.findByApplicationId(appId)
+                .<AppRegistration>handle((entity, sink) -> {
+                    try {
+                        sink.next(AppRegistration.builder()
+                                .id(entity.id())
+                                .applicationId(entity.applicationId())
+                                .clientId(entity.clientId())
+                                .clientName(entity.clientName())
+                                .clientSecret(encDecService.decrypt(entity.clientSecret()))
+                                        .redirectUrl(entity.redirectUrl())
+                                .scope(entity.scope())
+                                .enabled(entity.enabled())
+                                .build());
+                    } catch (Exception e) {
+                        sink.error(new RuntimeException(e));
+                    }
+                })
+                .map(AppRegistrationConverter::toRecord)
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+    }
+
+    private Mono<OAuth2RegisteredClientResponse> getAppByClientId(OAuth2RegisteredClientRecord record) {
+        return appRegistrationRepository.findByClientId(record.clientId())
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_CLIENT), NOT_FOUND.value()))
+                .map(AppRegistrationConverter::toRecord)
+                .map(app -> toRecord(record, app));
+    }
+
+    private Mono<OAuth2RegisteredClientResponse> registerApp(OAuth2RegisteredClientRecord record) {
+        try {
+            String appId = UUID.randomUUID().toString();
+            String appSecret = encDecService.encrypt(record.clientSecret());
+            List<String> scope = record.scopes().stream().toList();
+            AppRegistrationRecord appRecord = AppRegistrationRecord.builder()
+                    .applicationId(appId)
+                    .clientName(record.clientName())
+                    .clientId(record.clientId())
+                    .clientSecret(appSecret)
+                    .redirectUrl(concat(record.redirectUris()))
+                    .enabled(true)
+                    .scope(scope.get(0))
+                    .build();
+            return appRegistrationRepository.save(toEntity(appRecord))
+                    .map(AppRegistrationConverter::toRecord)
+                    .map(app -> toRecord(record, app));
+        }catch (Exception e){
+            log.error("Error registering app", e);
+            return Mono.error(e);
+        }
+    }
+
     private Mono<OAuth2RegisteredClient> validateClient(String clientId) {
         return clientRepository.findByClientId(clientId.toUpperCase())
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_CLIENT), NOT_FOUND.value()));
+    }
+
+    private static String concat(Set<String> values) {
+        return String.join(",", values);
     }
 
 }

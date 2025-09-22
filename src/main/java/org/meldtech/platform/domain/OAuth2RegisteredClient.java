@@ -12,7 +12,6 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Set;
 import java.util.UUID;
 
 /**

@@ -1,6 +1,7 @@
 package org.meldtech.platform.model.api.request.signin;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +13,7 @@ import java.io.Serializable;
  * @Email: josleke@gmail.com, josiah.adetayo@meld-tech.com
  * @Date: 12/6/23
  */
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
