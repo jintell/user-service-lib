@@ -33,13 +33,12 @@ public class ResourceOwnerService {
      * @return Mono<String>
      */
     public Mono<String> requestAuthorizedUrl(String deviceId, String appId) {
-        System.err.println("Requesting Authorized URL for App:");
         return Mono.just(generateCodeChallenge(deviceId))
                 .flatMap(s -> createAuthorizeRequest(s, deviceId, appId));
     }
 
-    public Mono<String> requestLogoutEndpoint() {
-        return Mono.just(logoutUrl);
+    public Mono<String> requestLogoutEndpoint(String appId) {
+        return Mono.just(logoutUrl.concat("?appId=").concat(appId));
     }
 
     private Mono<String> createAuthorizeRequest(String challenge, String state, String appId) {

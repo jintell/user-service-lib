@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -109,7 +110,10 @@ public class OAuth2RegisteredClientService {
                                 .clientId(entity.clientId())
                                 .clientName(entity.clientName())
                                 .clientSecret(encDecService.decrypt(entity.clientSecret()))
-                                        .redirectUrl(entity.redirectUrl())
+                                .redirectUrl(entity.redirectUrl())
+                                .appLoginUrl(entity.appLoginUrl())
+                                .appLogoutUrl(entity.appLogoutUrl())
+                                .appResolvedPathUrl(entity.appResolvedPathUrl())
                                 .scope(entity.scope())
                                 .enabled(entity.enabled())
                                 .build());
@@ -140,6 +144,12 @@ public class OAuth2RegisteredClientService {
                     .clientId(record.clientId())
                     .clientSecret(appSecret)
                     .redirectUrl(concat(record.redirectUris()))
+                    .appLoginUrl(Objects.nonNull(record.appRegistration()) ?
+                            record.appRegistration().appLoginUrl() : null)
+                    .appLogoutUrl(Objects.nonNull(record.appRegistration()) ?
+                            record.appRegistration().appLogoutUrl() : null)
+                    .appResolvedPathUrl(Objects.nonNull(record.appRegistration()) ?
+                            record.appRegistration().appResolvedPathUrl() : null)
                     .enabled(true)
                     .scope(scope.get(0))
                     .build();

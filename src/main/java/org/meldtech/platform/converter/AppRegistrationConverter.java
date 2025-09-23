@@ -15,6 +15,9 @@ public class AppRegistrationConverter {
                 .clientName(entity.clientName())
                 .clientSecret(entity.clientSecret())
                 .redirectUrl(entity.redirectUrl())
+                .appLoginUrl(entity.appLoginUrl())
+                .appLogoutUrl(entity.appLogoutUrl())
+                .appResolvedPathUrl(entity.appResolvedPathUrl())
                 .scope(entity.scope())
                 .enabled(entity.enabled())
                 .build();
@@ -27,6 +30,9 @@ public class AppRegistrationConverter {
                 .clientSecret(record.clientSecret())
                 .clientName(record.clientName())
                 .redirectUrl(record.redirectUrl())
+                .appLoginUrl(record.appLoginUrl())
+                .appLogoutUrl(record.appLogoutUrl())
+                .appResolvedPathUrl(record.appResolvedPathUrl())
                 .scope(record.scope())
                 .enabled(record.enabled())
                 .build();

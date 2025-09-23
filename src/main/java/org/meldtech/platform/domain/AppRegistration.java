@@ -15,6 +15,9 @@ public record AppRegistration(@Id
                               String clientId,
                               String clientSecret,
                               String redirectUrl,
+                              String appLoginUrl,
+                              String appLogoutUrl,
+                              String appResolvedPathUrl,
                               String scope,
                               boolean enabled,
                               Instant createdOn) implements Persistable<Long> {

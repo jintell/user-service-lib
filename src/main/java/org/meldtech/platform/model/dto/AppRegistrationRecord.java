@@ -8,6 +8,9 @@ public record AppRegistrationRecord(String applicationId,
                                     String clientId,
                                     String clientSecret,
                                     String redirectUrl,
+                                    String appLoginUrl,
+                                    String appLogoutUrl,
+                                    String appResolvedPathUrl,
                                     String scope,
                                     boolean enabled) {
 }
