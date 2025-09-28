@@ -45,14 +45,15 @@ public class ResourceOwnerService {
         return authService.getApp(appId)
                         .map(appRegistrationRecord ->
                                 String.format("%s?response_type=code&client_id=%s&redirect_uri=%s&scope=%s&" +
-                                            "code_challenge=%s&code_challenge_method=%s&state=%s",
+                                            "code_challenge=%s&code_challenge_method=%s&state=%s&appId=%s",
                                         authorizeUrl,
                                         appRegistrationRecord.clientId(),
                                         appRegistrationRecord.redirectUrl(),
                                         appRegistrationRecord.scope(),
                                         challenge,
                                         challengeMethod,
-                                        state)
+                                        state,
+                                        appId)
                         );
     }
 
