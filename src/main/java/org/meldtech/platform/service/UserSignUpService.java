@@ -159,6 +159,18 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 );
     }
 
+    public Mono<AppResponse> sendOtp(String email, String templateId) {
+        String newOTP = AppUtil.generateOTP(6);
+        log.info("email {}", email);
+        return userRepository.findByUsername(email)
+                .doOnNext(user -> log.info("user: {}", user))
+                .flatMap(user -> sendMail(user, newOTP, email, email, templateId))
+                .switchIfEmpty(
+                        handleOnErrorResume(new AppException(INVALID_EMAIL), BAD_REQUEST.value())
+                ).onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+    }
+
     public Mono<AppResponse> resendOtp(String username, String email, String templateId) {
         String newOTP = AppUtil.generateOTP(6);
         log.info("email {}\nuserName {}", email, username.length());
@@ -235,7 +247,6 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         profileRecord.getUsername() + "'s "+ USER_PASSWORD_MSG, USER_MSG))
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), BAD_REQUEST.value()));
     }
-
 
     public Mono<AppResponse> deActivateUser(String publicId){
         return userRepository.findByPublicId(publicId)
