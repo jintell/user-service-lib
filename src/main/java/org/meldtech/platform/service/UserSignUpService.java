@@ -164,7 +164,13 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
         log.info("email {}", email);
         return userRepository.findByUsername(email)
                 .doOnNext(user -> log.info("user: {}", user))
-                .flatMap(user -> sendMail(user, newOTP, email, email, templateId))
+                .flatMap(user -> verificationRepository.save(Verification.builder()
+                                    .userOtp(newOTP)
+                                    .type(OTHERS.name())
+                                    .durationInHours(1L)
+                                    .build())
+                            .map(v -> user)
+                ).flatMap(user -> sendMail(user, newOTP, email, email, templateId))
                 .switchIfEmpty(
                         handleOnErrorResume(new AppException(INVALID_EMAIL), BAD_REQUEST.value())
                 ).onErrorResume(t ->
