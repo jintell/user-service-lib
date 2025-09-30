@@ -168,6 +168,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                                     .userOtp(newOTP)
                                     .type(OTHERS.name())
                                     .durationInHours(1L)
+                                    .userId(user.getId())
                                     .build())
                             .map(v -> user)
                 ).flatMap(user -> sendMail(user, newOTP, email, email, templateId))
