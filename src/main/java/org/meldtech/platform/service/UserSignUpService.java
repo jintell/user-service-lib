@@ -3,6 +3,7 @@ package org.meldtech.platform.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.meldtech.platform.config.VerificationLinksConfig;
 import org.meldtech.platform.domain.*;
 import org.meldtech.platform.event.EmailEvent;
 import org.meldtech.platform.exception.AppException;
@@ -34,7 +35,6 @@ import static org.meldtech.platform.converter.UserProfileConverter.*;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
 import static org.meldtech.platform.model.constant.VerificationType.*;
 import static org.meldtech.platform.util.AppUtil.appResponse;
-import static org.meldtech.platform.util.AppUtil.getValueOrDefault;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -55,6 +55,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     private final UserProfileService userProfileService;
     private final PasswordEncoder passwordEncoder;
     private final EmailEvent emailEvent;
+    private final VerificationLinksConfig verificationLinks;
 
     private static final String USER_MSG = "User Action Request Executed Successfully";
     private static final String USER_PASSWORD_MSG = "Password change was successful";
@@ -62,8 +63,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     @Value("${email.activation.template}")
     private String activationMailTemplateId;
-    @Value("${email.verification.link}")
-    private String emailVerificationLink;
+//    @Value("${email.verification.link}")
+//    private String emailVerificationLink;
     private static final String INVALID_USER = "Invalid username";
     private static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
@@ -301,6 +302,8 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private Mono<Boolean> sendMail(Verification verification, UserRecord accountToCreate) {
         String company = "ESGC";
+        String emailVerificationLink = getEmailVerificationLink(accountToCreate);
+        System.err.println("emailVerificationLink: " + emailVerificationLink);
         return emailEvent.sendMail(GenericRequest.builder()
                 .to(accountToCreate.email())
                 .templateId(activationMailTemplateId)
@@ -320,7 +323,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                         .to(email)
                         .templateId(templateId)
                         .template(EmailTemplate.builder()
-                                .link(emailVerificationLink)
+                                .link(verificationLinks.getVerification().getLink())
                                 .firstName(firstName)
                                 .otp(newOTP)
                                 .company("")
@@ -365,6 +368,11 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 
     private String encodeSecret(String secret) {
         return Objects.isNull(secret) ? null : passwordEncoder.encode(secret);
+    }
+
+    private String getEmailVerificationLink(UserRecord record) {
+        String link = verificationLinks.getVerification().getLinks().get(record.appId());
+        return link != null ? link : verificationLinks.getVerification().getLink();
     }
 
     private Integer getOrDefault(Integer id) {

@@ -22,4 +22,5 @@ public record UserRecord(String publicId,
                          String phone,
                          String profilePicture,
                          @NotBlank(message = "Valid Role is Required")
-                         String role)  {}
+                         String role,
+                         String appId)  {}
