@@ -215,7 +215,8 @@ public class AppResponseStub {
                 "test@test.com",
                 "+234815667281",
                 UUID.randomUUID().toString(),
-                "USER");
+                "USER",
+                UUID.randomUUID().toString());
     }
 
 

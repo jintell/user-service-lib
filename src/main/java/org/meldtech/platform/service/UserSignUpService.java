@@ -18,10 +18,12 @@ import org.meldtech.platform.model.dto.UserSetting;
 import org.meldtech.platform.model.event.EmailTemplate;
 import org.meldtech.platform.model.event.GenericRequest;
 import org.meldtech.platform.repository.*;
+import org.meldtech.platform.service.crypto.HmacUtil;
 import org.meldtech.platform.service.encoding.MessageEncoding;
 import org.meldtech.platform.service.template.UserSignupTemplate;
 import org.meldtech.platform.util.AppError;
 import org.meldtech.platform.util.AppUtil;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -56,6 +58,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
     private final PasswordEncoder passwordEncoder;
     private final EmailEvent emailEvent;
     private final VerificationLinksConfig verificationLinks;
+    private final byte[] hmacSecretKey;
 
     private static final String USER_MSG = "User Action Request Executed Successfully";
     private static final String USER_PASSWORD_MSG = "Password change was successful";
@@ -66,7 +69,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
 //    @Value("${email.verification.link}")
 //    private String emailVerificationLink;
     private static final String INVALID_USER = "Invalid username";
-    private static final String INVALID_HASH = "Invalid hash";
+    public static final String INVALID_HASH = "Invalid hash";
     private static final String INVALID_EMAIL = "Username/Email is not on our record";
     private static final String DUPLICATE_ERROR = "We could not resolve the email";
     private static final String INVALID_ROLE = "Invalid/No role was provided";
@@ -339,6 +342,7 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                 );
     }
 
+
     private Mono<User> validateHash(String publicId, String userHash, String salt) {
         return verifyCredentials(publicId)
                 .flatMap(aggregate -> {
@@ -349,6 +353,19 @@ public class UserSignUpService extends UserSignupTemplate<UserRecord, User, AppR
                        return Mono.just(aggregate.getT1());
                    }
                    return handleOnErrorResume(new AppException(INVALID_HASH), BAD_REQUEST.value());
+                });
+    }
+
+    private Mono<User> validateHashHmac(String publicId, String userHashBase64, String salt) {
+        return verifyCredentials(publicId)
+                .flatMap(aggregate -> {
+                    String payload = String.format("%s:%s:%s", aggregate.getT2().getUserOtp(), publicId, salt);
+                    boolean ok = HmacUtil.verifyBase64(payload, userHashBase64, hmacSecretKey);
+                    if (ok) {
+                        deleteOtp(aggregate.getT2());
+                        return Mono.just(aggregate.getT1());
+                    }
+                    return handleOnErrorResume(new AppException(INVALID_HASH), BAD_REQUEST.value());
                 });
     }
 

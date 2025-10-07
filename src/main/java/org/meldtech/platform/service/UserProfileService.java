@@ -17,8 +17,11 @@ import org.meldtech.platform.repository.RoleRepository;
 import org.meldtech.platform.repository.UserProfileRepository;
 import org.meldtech.platform.repository.UserRepository;
 import org.meldtech.platform.repository.UserRoleRepository;
+import org.meldtech.platform.service.crypto.HmacUtil;
 import org.meldtech.platform.util.AppError;
 import org.meldtech.platform.util.ReportSettings;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +29,7 @@ import java.util.Objects;
 
 import static org.meldtech.platform.converter.UserProfileConverter.*;
 import static org.meldtech.platform.exception.ApiErrorHandler.handleOnErrorResume;
+import static org.meldtech.platform.service.UserSignUpService.INVALID_HASH;
 import static org.meldtech.platform.util.AppUtil.appResponse;
 import static org.meldtech.platform.util.AppUtil.setPage;
 import static org.springframework.http.HttpStatus.*;
@@ -45,12 +49,19 @@ public class UserProfileService {
     private final UserProfileRepository userProfileRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    //    @Qualifier("hmacSecretKey")
+    private final byte[] hmacSecretKey;
 
     private static final String INVALID_USER = "Unauthorized User Action";
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
     private static final String INVALID_ROLE = "Invalid/No role was provided";
 
+    @Value("${security.role.transition.from}")
+    private String roleTransitionFrom;
+
+    @Value("${security.role.transition.to}")
+    private String roleTransitionTo;
 
     public Mono<AppResponse> createUserProfile(FullUserProfileRecord userProfile) {
         log.info("About to create user profile {}", userProfile);
@@ -161,6 +172,20 @@ public class UserProfileService {
                         .flatMap(userProfileRepository::save)
                         .map(UserProfileConverter::mapToRecord)
                 ).map(role -> appResponse(role, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_ROLE), BAD_REQUEST.value()));
+    }
+
+    public Mono<AppResponse> changeRole(String publicId, String userHashBase64, String salt) {
+        // Hash value = publicId:username:role:salt
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> {
+                    String payload = String.format("%s:%s:%s:%s", publicId, user.getUsername(), roleTransitionFrom, salt);
+                    boolean ok = HmacUtil.verifyBase64(payload, userHashBase64, hmacSecretKey);
+                    if (ok) {
+                        return changePermission(publicId, roleTransitionTo);
+                    }
+                    return handleOnErrorResume(new AppException(INVALID_HASH), BAD_REQUEST.value());
+                })
                 .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_ROLE), BAD_REQUEST.value()));
     }
 
