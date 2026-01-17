@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.r2dbc.postgresql.codec.Json;
 import org.meldtech.platform.model.api.AppResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -122,5 +123,45 @@ public class AppUtil {
     public static Pageable setPage(ReportSettings settings) {
         return PageRequest.of(settings.getPage() - 1, settings.getSize(),
                 Sort.Direction.fromString(settings.getSortIn()), settings.getSortBy());
+    }
+
+    /**
+     * Converts a JSON object to a Java object of the specified type.
+     *
+     * @param json the JSON object
+     * @param clazz the class of the target type
+     * @param <T> the target type
+     * @return the converted Java object
+     */
+    public static <T> T fromJson(Json json, Class<T> clazz) {
+        if (json == null) {
+            return null;
+        }
+
+        try {
+            return getMapper().readValue(json.asString(), clazz);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting Json to " + clazz.getSimpleName(), e);
+        }
+    }
+
+    /**
+     * Converts a Java object to a Json object.
+     *
+     * @param object the Java object
+     * @return the JSON object
+     */
+    public static Json toJson(Object object) {
+        System.err.println("Converting to Json");
+        if (object == null) {
+            return null;
+        }
+
+        try {
+            String jsonString = getMapper().writeValueAsString(object);
+            return Json.of(jsonString);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Error converting object to Json", e);
+        }
     }
 }

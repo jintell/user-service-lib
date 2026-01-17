@@ -41,7 +41,7 @@ public class CacVerify implements VerifyMeStrategy {
         log.info("CAC -- VerifyMe request: ", request);
         return tokenService.getAccessToken()
                 .flatMap(accessToken -> performVerification(request, accessToken))
-                .map(CompanyConverter::mapToRecord)
+                .map(cacRecord ->   CompanyConverter.mapToRecord(cacRecord, request.address()))
                 .map(CompanyConverter::mapToEntity)
                 .flatMap(this::saveResponse)
                 .onErrorResume(this::logAndHandleError);

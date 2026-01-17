@@ -11,5 +11,6 @@ import org.springframework.security.oauth2.jose.jws.JwsAlgorithm;
 @Builder
 public record ClientSettingsRequest(boolean requireProofKey,
                                     boolean requireAuthorizationConsent,
-                                    String jwkSetUrl, JwsAlgorithm authenticationSigningAlgorithm,
+                                    String jwkSetUrl,
+                                    JwsAlgorithm authenticationSigningAlgorithm,
                                     String x509CertificateSubjectDN) {}

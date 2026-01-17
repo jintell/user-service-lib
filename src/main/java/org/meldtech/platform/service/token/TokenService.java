@@ -36,6 +36,12 @@ public class TokenService {
                 .map(accessToken -> AppUtil.appResponse(accessToken, "User Access token"));
     }
 
+    public Mono<AppResponse> reNewAccessToken(String refreshToken, String appId) {
+        log.info("Refreshing Access Token");
+        return refreshToken(refreshToken, appId)
+                .map(accessToken -> AppUtil.appResponse(accessToken, "User Access token"));
+    }
+
     private Mono<AccessToken> askForExchange(String code, String deviceId, String appId) {
         String codeVerifier = AppUtil.USER_DEVICE.get(deviceId);
         var url = authorizationUrl;
@@ -45,7 +51,15 @@ public class TokenService {
                         httpConnectorService.postForm(url, params(code, codeVerifier, app), headers(app), AccessToken.class));
     }
 
-    private Map<String, String> headers(AppRegistrationRecord app) {
+    private Mono<AccessToken> refreshToken(String refreshToken, String appId) {
+        var url = authorizationUrl;
+        log.trace("Fetching auth token (Refresh token) with: {}", url);
+        return authService.getApp(appId)
+                .flatMap(app ->
+                        httpConnectorService.postForm(url, params(refreshToken, app), headers(app), AccessToken.class));
+    }
+
+    private Map<String, String> headers(AppRegistrationRecord app ) {
         Map<String, String> headers = new HashMap<>();
         headers.put("Content_Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE);
         headers.put("Accept", MediaType.APPLICATION_JSON_VALUE);
@@ -62,6 +76,14 @@ public class TokenService {
         params.add("client_id", app.clientId());
         params.add("code", code);
         params.add("code_verifier", codeVerifier);
+        return params;
+    }
+
+    private MultiValueMap<String, String> params(String refreshToken, AppRegistrationRecord app) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "refresh_token");
+        params.add("refresh_token", refreshToken);
+        params.add("client_id", app.clientId());
         return params;
     }
 }

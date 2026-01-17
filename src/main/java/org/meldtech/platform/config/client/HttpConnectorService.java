@@ -56,6 +56,7 @@ public class HttpConnectorService {
                                 Class<T> returnType) {
         log.info("{}", endpoint);
         log.info("{}", headers);
+        log.info("{}", requestBody);
         return webClient.post()
                 .uri(endpoint)
                 .headers(httpHeaders -> headers.forEach(httpHeaders::set)  )

@@ -18,7 +18,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.meldtech.platform.model.constant.AppConstant.PATTERN;
-import static org.meldtech.platform.util.AppUtil.getMapper;
+import static org.meldtech.platform.util.AppUtil.fromJson;
+import static org.meldtech.platform.util.AppUtil.toJson;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -112,7 +113,7 @@ public class RegisteredClientConverter {
     }
 
     private static Set<String> toSet(String values) {
-        if(!values.contains(",")) return Set.of(values);
+        if(!values.contains(",")) return new HashSet<>(Collections.singleton(values));
         return Arrays
                 .stream(values.split(","))
                 .collect(Collectors.toSet());
@@ -127,6 +128,8 @@ public class RegisteredClientConverter {
             return new HashMap<>();
         }
     }
+
+
 
     public static String sanitize(String values) {
         String regex = "[*|!|&|^|%|$|#|`|~]+";
