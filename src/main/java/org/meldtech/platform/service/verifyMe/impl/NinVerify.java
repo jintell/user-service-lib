@@ -42,7 +42,7 @@ public class NinVerify implements VerifyMeStrategy {
         log.info("NIN -- VerifyMe request: ", request);
         return tokenService.getAccessToken()
                 .flatMap(accessToken -> performVerification(request, accessToken))
-                .map(CompanyConverter::mapToRecord)
+                .map(ninRecord ->  CompanyConverter.mapToRecord(ninRecord, request.address()))
                 .map(CompanyConverter::mapToEntity)
                 .flatMap(this::saveResponse)
                 .onErrorResume(t ->

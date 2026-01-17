@@ -40,10 +40,10 @@ public class CompanyConverter {
                     .build();
     }
 
-    public static synchronized CompanyRecord mapToRecord(CacRecord entity) {
+    public static synchronized CompanyRecord mapToRecord(CacRecord entity, String address) {
        return  CompanyRecord.builder()
                     .name(entity.cac().companyName())
-                    .address(getAddress(entity))
+                    .address(getAddress(entity, address))
                     .idNumber(entity.cac().rcNumber())
                     .type(VerifyType.CAC.name())
                     .contact(entity.cac().companyEmail())
@@ -51,15 +51,20 @@ public class CompanyConverter {
                     .build();
     }
 
-    private static String getAddress(CacRecord entity) {
-        if(Objects.isNull(entity) || Objects.isNull(entity.cac())) return "";
+    private static String getAddress(CacRecord entity, String address) {
+        if(Objects.isNull(entity) || Objects.isNull(entity.cac())) return address;
         return entity.cac().headOfficeAddress();
     }
 
-    public static synchronized CompanyRecord mapToRecord(NinRecord entity) {
+    private static String getAddress(NinRecord entity, String address) {
+        if(Objects.isNull(entity) || Objects.isNull(entity.nin().residence().address1())) return address;
+        return entity.nin().residence().address1();
+    }
+
+    public static synchronized CompanyRecord mapToRecord(NinRecord entity, String address) {
        return  CompanyRecord.builder()
                     .name(entity.applicant().firstName() + " " + entity.applicant().lastName())
-                    .address(entity.nin().residence().address1())
+                    .address(getAddress(entity, address))
                     .idNumber(entity.nin().nin())
                     .type(VerifyType.NIN.name())
                     .contact(entity.nin().phone())

@@ -14,4 +14,5 @@ public record VerificationRequest(@JsonProperty("regNumber") String regNumber,
                                   @JsonProperty("lastname")
                                   String lastName,
                                   @JsonProperty("phone_no")
-                                  String phoneNo) {}
+                                  String phoneNo,
+                                  String address) {}
