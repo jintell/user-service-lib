@@ -65,6 +65,49 @@ public class UserProfileServiceTest {
 
     }
 
+    @DisplayName("Get User Profiles By Application")
+    @Test
+    void givenPagination_whenGetAllUserProfiles_ByAppId_thenReturnAppResponse() {
+        String appId = "appId";
+        when(profileRepository.findAllByAppId(any(), anyString()))
+                .thenReturn(Flux.just(userProfiles().toArray(new UserProfile[0])));
+
+        when(paginatedResponse.getPageIntId(any(), any(), any()))
+                .thenReturn(Mono.just(AppResponseStub.appResponses(userProfiles())));
+
+        when(userRepository.findById(anyInt()))
+                .thenReturn(Mono.just(AppResponseStub.user()));
+
+        StepVerifier.create(userProfileService.getUserProfiles(ReportSettings.instance().page(1).size(10), appId, null))
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+
+    }
+
+    @DisplayName("Get User Profiles By Application and Tenant")
+    @Test
+    void givenPagination_whenGetAllUserProfiles_ByAppId_And_TenantId_thenReturnAppResponse() {
+        String appId = "appId";
+        String tenantId = "tenantId";
+        when(profileRepository.findAllByAppIdAndTenantId(any(), anyString(), anyString()))
+                .thenReturn(Flux.just(userProfiles().toArray(new UserProfile[0])));
+
+        when(paginatedResponse.getPageIntId(any(), any(), any()))
+                .thenReturn(Mono.just(AppResponseStub.appResponses(userProfiles())));
+
+        when(userRepository.findById(anyInt()))
+                .thenReturn(Mono.just(AppResponseStub.user()));
+
+        StepVerifier.create(userProfileService.getUserProfiles(ReportSettings.instance().page(1).size(10), appId, tenantId))
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+
+    }
+
     @DisplayName("Get User Profile By Pubic Id ")
     @Test
     void givenPublicId_whenGetUserProfile_thenReturnAppResponse() {
@@ -132,6 +175,27 @@ public class UserProfileServiceTest {
                 .thenReturn(Mono.just(AppResponseStub.userProfile(1)));
 
         StepVerifier.create(userProfileService.updateUserProfile(createFullUserProfileRecord(), true))
+                .expectSubscription()
+                .expectNextMatches(Objects::nonNull)
+                .expectComplete()
+                .verify();
+    }
+
+    @DisplayName("Update User Tenant")
+    @Test
+    void givenUserTenant_whenEditUserProfile_thenReturnAppResponse() {
+        String publicId = UUID.randomUUID().toString();
+        String tenantId = UUID.randomUUID().toString();
+        when(userRepository.findByPublicId(anyString()))
+                .thenReturn(Mono.just(AppResponseStub.user()));
+
+        when(profileRepository.findById(anyInt()))
+                .thenReturn(Mono.just(AppResponseStub.userProfile(1)));
+
+        when(userRepository.save(any()))
+                .thenReturn(Mono.just(AppResponseStub.user()));
+
+        StepVerifier.create(userProfileService.updateUserProfile(publicId, tenantId))
                 .expectSubscription()
                 .expectNextMatches(Objects::nonNull)
                 .expectComplete()

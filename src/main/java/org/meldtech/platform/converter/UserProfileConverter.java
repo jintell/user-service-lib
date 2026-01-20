@@ -3,6 +3,7 @@ package org.meldtech.platform.converter;
 
 import io.r2dbc.postgresql.codec.Json;
 import lombok.extern.slf4j.Slf4j;
+import org.meldtech.platform.domain.User;
 import org.meldtech.platform.domain.UserProfile;
 import org.meldtech.platform.model.api.request.UserProfileRecord;
 import org.meldtech.platform.model.dto.UserSetting;
@@ -51,6 +52,11 @@ public class UserProfileConverter {
         if(isAdmin) userProfile.setSettings(Objects.isNull(profileRecord.settings()) ? null :
                 Json.of(convertToType(profileRecord.settings(), String.class)));
         return userProfile;
+    }
+
+    public static synchronized User mapToEntity(User user, String tenantId) {
+        user.setTenantId(tenantId);
+        return user;
     }
 
     public static synchronized UserProfileRecord mapToRecord(UserProfile profile) {

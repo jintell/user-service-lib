@@ -216,6 +216,7 @@ public class AppResponseStub {
                 "+234815667281",
                 UUID.randomUUID().toString(),
                 "USER",
+                UUID.randomUUID().toString(),
                 UUID.randomUUID().toString());
     }
 
@@ -276,7 +277,7 @@ public class AppResponseStub {
     }
 
     public static VerificationRequest verifyRequest() {
-        return new VerificationRequest(UUID.randomUUID().toString(), "","", "");
+        return new VerificationRequest(UUID.randomUUID().toString(), "","", "", "");
     }
 
     public static AppRegistration appRegistration() {

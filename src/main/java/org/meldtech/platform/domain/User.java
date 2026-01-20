@@ -31,6 +31,8 @@ public class User implements Serializable,Persistable<Integer> {
         private String password;
         private String publicId;
         private boolean enabled;
+        private String appId;
+        private String tenantId;
         private Instant createdOn;
 
         @Override

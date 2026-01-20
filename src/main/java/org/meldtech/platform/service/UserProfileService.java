@@ -23,6 +23,7 @@ import org.meldtech.platform.util.ReportSettings;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
@@ -56,6 +57,7 @@ public class UserProfileService {
     private static final String USER_PROFILE_MSG = "User Profile Detail Executed Successfully";
     private static final String DUPLICATE_CREATION = "User with public Id already exist";
     private static final String INVALID_ROLE = "Invalid/No role was provided";
+    private static final String INVALID_TENANT = "Invalid/No tenant was provided";
 
     @Value("${security.role.transition.from}")
     private String roleTransitionFrom;
@@ -117,6 +119,20 @@ public class UserProfileService {
                         handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
     }
 
+    public Mono<AppResponse> updateUserProfile(String publicId, String tenantId) {
+        if(Objects.isNull(tenantId)) return handleOnErrorResume(new AppException(INVALID_TENANT), BAD_REQUEST.value());
+        log.info("About to update user tenant {}-{}", publicId, tenantId);
+        return userRepository.findByPublicId(publicId)
+                .flatMap(user -> userRepository.save(UserProfileConverter
+                                .mapToEntity(user, tenantId) )
+                        .flatMap(savedUser -> getUserProfileFromDB(savedUser.getId()))
+                ).map(UserProfileConverter::mapToRecord)
+                .map(profileRecord -> appResponse(profileRecord, USER_PROFILE_MSG))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), UNAUTHORIZED.value()))
+                .onErrorResume(t ->
+                        handleOnErrorResume(new AppException(AppError.massage(t.getMessage())), BAD_REQUEST.value()));
+    }
+
 
     public Mono<AppResponse> getUserProfile(String publicId) {
         return userRepository.findByPublicId(publicId)
@@ -136,6 +152,18 @@ public class UserProfileService {
 
     public Mono<AppResponse> getUserProfiles(ReportSettings settings) {
         return profileRepository.findAllBy(setPage(settings))
+                .flatMap(this::getUserProfileRecord)
+                .collectList()
+                .flatMap(profileRecords -> paginatedResponse.getPageIntId(profileRecords, profileRepository, setPage(settings)))
+                .switchIfEmpty(handleOnErrorResume(new AppException(INVALID_USER), NOT_FOUND.value()));
+    }
+
+    public Mono<AppResponse> getUserProfiles(ReportSettings settings, String appId, String tenantId) {
+        Flux<UserProfile> profiles = (Objects.isNull(appId) && Objects.isNull(tenantId)) ?
+                profileRepository.findAllBy(setPage(settings)) : (Objects.isNull(tenantId)) ?
+                profileRepository.findAllByAppId(setPage(settings), appId) :
+                profileRepository.findAllByAppIdAndTenantId(setPage(settings), appId, tenantId);
+        return profiles
                 .flatMap(this::getUserProfileRecord)
                 .collectList()
                 .flatMap(profileRecords -> paginatedResponse.getPageIntId(profileRecords, profileRepository, setPage(settings)))
@@ -204,6 +232,7 @@ public class UserProfileService {
                 .map(userProfile -> FullUserProfileRecord.builder()
                         .username(user.getUsername())
                         .publicId(user.getPublicId())
+                        .tenantId(user.getTenantId())
                         .profile(UserProfileConverter.mapToRecord(userProfile))
                         .build()
                 );
