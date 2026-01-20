@@ -11,4 +11,4 @@ import org.meldtech.platform.model.api.request.UserProfileRecord;
  */
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record FullUserProfileRecord(String username, String publicId, UserProfileRecord profile) {}
+public record FullUserProfileRecord(String username, String publicId, String tenantId, UserProfileRecord profile) {}
